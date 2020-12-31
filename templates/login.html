@@ -187,11 +187,11 @@
                 timeout: 5000,
                 dataType: "json",
                 data: data,
-                success: function(res) {
-                    if (res.code == 0) {
+                success: function(result) {
+                    if (result.code == 0) {
                         location.href = "{% url "index" %}"
-                    } else if (res.code == 1){
-                        $("#notice").html(res.msg).css("color", "red");
+                    } else if (result.code == 1){
+                        $("#notice").html(result.msg).css("color", "red");
                     }
                 },
                 error: function (res) {
@@ -210,18 +210,18 @@
             fd.append("csrfmiddlewaretoken", csrf_token);
             console.log(fd);
             $.ajax({
-                type: "Firl",
+                type: "POST",
                 url: "{% url 'login' %}",
                 timeout: 5000,
                 dataType: "json",
                 data: fd,
                 processData: false,
                 contentType: false,
-                success: function(res) {
-                    if (res.code == 0) {
+                success: function(result) {
+                    if (result.code == 0) {
                         location.href = "/"
-                    } else if (res.code == 1){
-                        $("#notice").html(res.msg).css("color", "red");
+                    } else if (result.code == 1){
+                        $("#notice").html(result.msg).css("color", "red");
                     }
                 },
                 error: function () {

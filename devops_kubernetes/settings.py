@@ -121,5 +121,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    Path(BASE_DIR, 'static')
+    Path(BASE_DIR, 'static'),
+    Path(BASE_DIR, 'kube_config')
 ]
