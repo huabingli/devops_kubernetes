@@ -17,7 +17,7 @@ def core_api_def(*args, **kwargs):
         configuration.host = 'https://192.168.35.61:6443'
         configuration.ssl_ca_cert = Path(settings.BASE_DIR, 'static', 'ca.crt')
         configuration.verify_ssl = True
-        configuration.api_key = {'authorization': 'Bearer' + token}
+        configuration.api_key = {'authorization': 'Bearer {}'.format(token)}
         client.Configuration.set_default(configuration)
 
     elif file_path:
@@ -50,7 +50,6 @@ class LogIn(View):
         token = self.request.POST.get('token', None)
         if token:
             result = core_api_def(token=token)
-
         else:
             import random
             import hashlib
