@@ -1,0 +1,16 @@
+from kubernetes import client, config
+from pathlib import Path
+from django.conf import settings
+
+print(Path('static', 'ca.crt'))
+token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IkhlMkJRM2xYRmVMZVBvazlUcnNxS3NnZXZLdll6R2hRVk90RHBWUXV1RG8ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJkYXNoYm9hcmQtYWRtaW4tdG9rZW4tc2NzNmIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGFzaGJvYXJkLWFkbWluIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNjU1ZjA1OTEtMjI5OC00NzE4LTkzYzAtZDE1ODhjYjA1OTkwIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Omt1YmUtc3lzdGVtOmRhc2hib2FyZC1hZG1pbiJ9.XOd01df3xESN-bGV7IQ04O4dPU5YPjXumc8OA7KMhdvSwxl5epMPtBC9udJh-idHtwxWlhsgZFo_rToTQORr9ZMtT_NPpOLdXwbSIlYs-f5JaVLCB47Gl5QIfJFxtrZ4zlZr6qqGbT6AC7kv_HGMDQ_SQHdjMMw7uACfD13kMtlxW8Wedig9R7GPOEwS5djgmU84fTDEOe1YwlHOJRax0emzwRsGrwBGj-OQlY_yNCnTF5byVpwzFIRnJKZRPDlNQo13rRoPILd_SvNFCJW3bDB9Ns89l3eAKpOTYsHCNu3y2ij3LLi8HO6O2BzZxTNYD4zrT0e1t3QMcZbHtjSDkg'
+configuration = client.Configuration()
+configuration.host = 'https://192.168.35.61:6443'
+configuration.ssl_ca_cert = '/Users/lihuabing/Desktop/阿良课程/devops_kubernetes/static/ca.crt'
+configuration.verify_ssl = True
+configuration.api_key = {'authorization': 'Bearer' + token}
+client.Configuration.set_default(configuration)
+
+core_api = client.AppsV1Api()
+for dp in core_api.list_deployment_for_all_namespaces().items:
+    print(dp.metadata.name)

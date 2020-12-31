@@ -12,17 +12,16 @@ from pathlib import Path
 def core_api_def(*args, **kwargs):
     file_path = kwargs.get('file_path', None)
     token = kwargs.get('token', None)
-    if file_path:
-        config.load_kube_config(r'%s' %file_path)
-    elif token:
+    if token:
         configuration = client.Configuration()
         configuration.host = 'https://192.168.35.61:6443'
-        print(Path('static', 'ca.crt'))
-        configuration.ssl_ca_cert = Path(settings.STATICFILES_DIRS, 'static', 'ca.crt')
-        print(Path(settings.STATICFILES_DIRS, 'static', 'ca.crt'))
+        configuration.ssl_ca_cert = Path(settings.BASE_DIR, 'static', 'ca.crt')
         configuration.verify_ssl = True
         configuration.api_key = {'authorization': 'Bearer' + token}
         client.Configuration.set_default(configuration)
+
+    elif file_path:
+        config.load_kube_config(r'%s' % file_path)
     try:
         core_api = client.CoreApi()
         core_api.get_api_versions()
@@ -62,12 +61,13 @@ class LogIn(View):
                 with open(file_path, 'w', encoding='utf8') as f:
                     date = file_obj.read().decode()
                     f.write(date)
+            except FileNotFoundError:
+                import os
+                os.mkdir('kube_config')
+                return JsonResponse({'code': 1, 'msg': '请刷新后重试！'})
             except Exception as e:
                 print(e)
-                code = 1
-                msg = '文件类型错误！'
-                result = {'code': code, 'msg': msg}
-                return JsonResponse(result)
+                return JsonResponse({'code': 1, 'msg': '文件类型错误！'})
             result = core_api_def(file_path=file_path)
         return JsonResponse(result)
 
