@@ -1,45 +1,18 @@
 from django.shortcuts import render
-from django.views.generic import TemplateView, View
+from django.views.generic import View
 from django.http import JsonResponse
-from kubernetes import client, config
 
-from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from pathlib import Path
 
+from kubernetes import client, config
+
+from devops_kubernetes.k8s_login import auth_check, self_login_request
+
 
 # Create your views here.
-def core_api_def(*args, **kwargs):
-    file_path = kwargs.get('file_path', None)
-    token = kwargs.get('token', None)
-    if token:
-        configuration = client.Configuration()
-        configuration.host = 'https://192.168.35.61:6443'
-        configuration.ssl_ca_cert = Path(settings.BASE_DIR, 'static', 'ca.crt')
-        configuration.verify_ssl = True
-        configuration.api_key = {'authorization': 'Bearer {}'.format(token)}
-        client.Configuration.set_default(configuration)
-
-    elif file_path:
-        config.load_kube_config(r'%s' % file_path)
-    try:
-        core_api = client.CoreApi()
-        core_api.get_api_versions()
-        code = 0
-        msg = '登录成功'
-    except client.exceptions.ApiException as e:
-        print(e)
-        if file_path:
-            msg = '认证文件无效'
-        elif token:
-            msg = 'token无效'
-        else:
-            msg = '请使用认证文件或者token认证'
-        code = 1
-    result = {'code': code, 'msg': msg}
-    return result
-
-
 class LogIn(View):
     template_name = "login.html"
 
@@ -49,7 +22,11 @@ class LogIn(View):
     def post(self, request, *args, **kwargs):
         token = self.request.POST.get('token', None)
         if token:
-            result = core_api_def(token=token)
+            result = auth_check(token=token, auth_type='token')
+            if result.get('code') == 0:
+                request.session['is_login'] = True
+                request.session['auth_type'] = 'token'
+                request.session['token'] = token
         else:
             import random
             import hashlib
@@ -65,14 +42,16 @@ class LogIn(View):
                 os.mkdir('kube_config')
                 return JsonResponse({'code': 1, 'msg': '请刷新后重试！'})
             except Exception as e:
-                print(e)
-                return JsonResponse({'code': 1, 'msg': '文件类型错误！'})
-            result = core_api_def(file_path=file_path)
+                return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
+            result = auth_check(auth_type='kube_config', token=random_str)
+            if result.get('code') == 0:
+                request.session['is_login'] = True
+                request.session['auth_type'] = 'kube_config'
+                request.session['token'] = random_str
         return JsonResponse(result)
 
 
-class Index(TemplateView):
-    template_name = 'index.html'
+class IndexViewApi(APIView):
 
-    def post(self):
-        pass
+    def get(self, request):
+        return Response({'code': 1, 'msg': 'test测试使用'})

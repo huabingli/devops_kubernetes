@@ -140,6 +140,8 @@
                 <input type="file" name="kubeconfig" id="kubeconfig">
             </div>
             <p><button type="button" id="btn">登录</button>&nbsp;&nbsp;&nbsp;<span id="notice"></span></p>
+            <p><span id="except"></span></p>
+
         </div>
 
     </div>
@@ -219,7 +221,7 @@
                 contentType: false,
                 success: function(result) {
                     if (result.code == 0) {
-                        location.href = "/"
+                        location.href = "{% url 'index' %}"
                     } else if (result.code == 1){
                         $("#notice").html(result.msg).css("color", "red");
                     }
