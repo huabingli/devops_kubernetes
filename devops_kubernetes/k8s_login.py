@@ -39,15 +39,12 @@ def auth_check(auth_type, token):
 
 
 def self_login_request(func=None):
-    # from django.http import HttpResponseRedirect
 
     def inner(request, *args, **kwargs):
         is_login = request.session.get('is_login', False)
         if is_login:
             return func(request, *args, **kwargs)
         else:
-            # path = request.path
-            return redirect('login')
-            # return HttpResponseRedirect(reverse('login') + '?pre_url=' + path)  # 用于记录访问历史页面，便于登录后跳转
+            return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
     return inner

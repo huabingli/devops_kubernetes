@@ -185,13 +185,17 @@
             var data = {'token': token, 'csrfmiddlewaretoken': csrf_token};
             $.ajax({
                 type: "POST",
-                url: "{% url 'login' %}",
+                url: "{% url 'login' %}" + window.location.search,
                 timeout: 5000,
                 dataType: "json",
                 data: data,
                 success: function(result) {
                     if (result.code == 0) {
-                        location.href = "{% url "index" %}"
+                        if (result.next) {
+                            location.href = result.next
+                        } else {
+                            location.href = "{% url 'index' %}"
+                        }
                     } else if (result.code == 1){
                         $("#notice").html(result.msg).css("color", "red");
                     }
@@ -213,7 +217,7 @@
             console.log(fd);
             $.ajax({
                 type: "POST",
-                url: "{% url 'login' %}",
+                url: "{% url 'login' %}" + window.location.search,
                 timeout: 5000,
                 dataType: "json",
                 data: fd,
@@ -221,7 +225,11 @@
                 contentType: false,
                 success: function(result) {
                     if (result.code == 0) {
-                        location.href = "{% url 'index' %}"
+                        if (result.next) {
+                            location.href = result.next
+                        } else {
+                            location.href = "{% url 'index' %}"
+                        }
                     } else if (result.code == 1){
                         $("#notice").html(result.msg).css("color", "red");
                     }

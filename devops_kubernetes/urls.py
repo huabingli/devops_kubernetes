@@ -21,6 +21,5 @@ from devops_kubernetes.k8s_login import self_login_request
 
 urlpatterns = [
     path('', self_login_request(TemplateView.as_view(template_name="index.html")), name='index'),
-    path('lodfdsf', self_login_request(TemplateView.as_view(template_name="index.html"))),
     path('dashboard/', include('dashboard.urls'))
 ]
