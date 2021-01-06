@@ -7,7 +7,7 @@ from kubernetes import client, config
 from pathlib import Path
 
 
-def auth_check(auth_type, token):
+def load_auth(auth_type, token):
     if auth_type == 'token':
         configuration = client.Configuration()
         configuration.host = 'https://192.168.35.61:6443'
@@ -20,13 +20,15 @@ def auth_check(auth_type, token):
         file_path = Path('kube_config', token)
         config.load_kube_config(r'%s' % file_path)
 
+
+def auth_check(auth_type, token):
+    load_auth(auth_type, token)
     try:
         core_api = client.CoreApi()
         core_api.get_api_versions()
         code = 0
         msg = '登录成功'
     except client.exceptions.ApiException as e:
-        print(e)
         if auth_type == 'kube_config':
             msg = '认证文件无效'
         elif auth_type == 'token':
@@ -38,8 +40,8 @@ def auth_check(auth_type, token):
     return result
 
 
-def self_login_request(func=None):
-
+# 登录认证装饰器
+def self_login_request(func):
     def inner(request, *args, **kwargs):
         is_login = request.session.get('is_login', False)
         if is_login:

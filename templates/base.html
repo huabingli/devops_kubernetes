@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/layui/css/layui.css">
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin layui-form">
+  <div class="layui-header layui-bg-cyan">
+    <div class="layui-logo" style="color: white;font-size: 20px;font-weight: bold">kubernetes管理平台</div>
+    <!-- 头部区域（可配合layui已有的水平导航） -->
+      <ul class="layui-nav layui-layout-left  layui-bg-cyan">
+        <div class="layui-form-item">
+            <label class="layui-form-label">命名空间</label>
+            <div class="layui-input-block" style="color: #0C0C0C;margin-top: 7px;">
+              <select name="city" lay-verify="required" id="nsSelect" lay-filter="nsSelect">
+{#                <option value=""></option>#}
+{#                <option value="0" selecte >北京</option>#}
+{#                <option value="1">上海</option>#}
+{#                <option value="2">广州</option>#}
+{#                <option value="3">深圳</option>#}
+{#                <option value="4">杭州</option>#}
+              </select>
+            </div>
+        </div>
+      </ul>
+
+    <ul class="layui-nav layui-layout-right">
+{#      <li class="layui-nav-item">#}
+{#        <a href="javascript:;">#}
+{#          <img src="http://t.cn/RCzsdCq" class="layui-nav-img" alt="">#}
+{#          贤心#}
+{#        </a>#}
+{#        <dl class="layui-nav-child">#}
+{#          <dd><a href="">基本资料</a></dd>#}
+{#          <dd><a href="">安全设置</a></dd>#}
+{#        </dl>#}
+{#      </li>#}
+
+      <li class="layui-nav-item"><a href="{% url 'logout' %}">退出登录</a></li>
+    </ul>
+  </div>
+
+  <div class="layui-side  layui-bg-cyan">
+    <div class="layui-side-scroll">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree layui-bg-cyan layui-inline"  lay-filter="demo">
+        <li class="layui-nav-item">
+            <a href="{% url 'index' %}">平台概述</a>
+        </li>
+
+        <li class="layui-nav-item layui-nav-itemed">
+          <a class="" href="javascript:;">Kubernetes</a>
+          <dl class="layui-nav-child ">
+            <dd><a href="{% url 'nodes' %}" >Nodes</a></dd>
+            <dd><a href="{% url 'namespaces' %}">Namespaces</a></dd>
+            <dd><a href="javascript:">PersistentVolumes</a> </dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">工作负载</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;">Deployments</a></dd>
+            <dd><a href="javascript:;">DaemonSets</a></dd>
+            <dd><a href="javascript:;">Pods</a></dd>
+            <dd><a href="javascript:;">CronJobs</a></dd>
+            <dd><a href="javascript:;">Jobs</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">负载均衡</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;">Services</a></dd>
+            <dd><a href="javascript:;">Ingresses</a></dd>
+            <dd><a href="javascript:;">StatefulSets</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item">
+          <a href="javascript:;">存储于配置</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;">PersistentVolumeClaims </a></dd>
+            <dd><a href="javascript:;">ConfigMaps</a></dd>
+            <dd><a href="{% url 'secrets' %}">Secrets</a></dd>
+          </dl>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="layui-body">
+    <!-- 内容主体区域 -->
+    <div style="padding: 15px;">
+        {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  <div class="layui-footer">
+    <!-- 底部固定区域 -->
+    © ywcsb.vip
+  </div>
+</div>
+<script src="/static/layui/layui.js"></script>
+{% block js %}
+
+{% endblock %}
+<script>
+//JavaScript代码区域
+layui.use(['element','form', 'layer'], function(){
+    var element = layui.element;
+    var form = layui.form;
+    var $ = layui.jquery
+    var layer = layui.layer
+    element.on('nav(demo)', function(elem){
+        
+        layer.msg(elem.text());
+      });
+    $.ajax({
+        type: "GET",
+        url: '{% url "namespace_api" %}',
+        success: function (result) {
+            nsSelect = $('#nsSelect')
+            if (result.code == 0) {
+                for(let index in result.data) {
+                    row = result.data[index]
+                    nsSelect.append('<option value=' +row.name + '>' + row.name +'</option>')
+                }
+                form.render('select')
+                nsSelect.val('default')
+            }else {
+                nsSelect.append('<option value="default">default</option>')
+                form.render('select')
+                nsSelect.val('default')
+                layer.msg(result.msg)
+            }
+        },
+        error: function () {
+            layer.msg('服务器接口异常！')
+        }
+    })
+});
+</script>
+</body>
+</html>
+
+
