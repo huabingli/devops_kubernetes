@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dashboard',
-    'rest_framework'
+    'rest_framework',
+    'kube',
 ]
 
 MIDDLEWARE = [
@@ -130,5 +131,4 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     Path(BASE_DIR, 'static'),
-    Path(BASE_DIR, 'kube_config')
 ]

@@ -20,6 +20,10 @@ from django.views.generic import TemplateView
 from devops_kubernetes.k8s_login import self_login_request
 
 urlpatterns = [
-    path('', self_login_request(TemplateView.as_view(template_name="index.html")), name='index'),
-    path('dashboard/', include('dashboard.urls'))
+    path('', self_login_request(TemplateView.as_view(template_name="dashboard/index.html")), name='index'),
+    path('dashboard/', include('dashboard.urls')),
+    path('kube/', include('kube.urls')),
+    path('load_balancer/', include('load_balancer.urls')),
+    path('storage/', include('storage.urls')),
+    path('workload/', include('workload.urls'))
 ]

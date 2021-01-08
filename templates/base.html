@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        .layui-table-cell {
+            height: inherit;
+        }
+    </style>
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin ">
+  <div class="layui-header layui-bg-cyan">
+    <div class="layui-logo" style="color: white;font-size: 20px;font-weight: bold">kubernetes管理平台</div>
+    <!-- 头部区域（可配合layui已有的水平导航） -->
+      <ul class="layui-nav layui-layout-left">
+        <div class="layui-form-item layui-form"  style="color: #0C0C0C;margin-top: 7px;" lay-filter="nsSelectText">
+{#            <label class="layui-form-label">命名空间</label>#}
+            <div class="layui-select-tips">
+              <select name="city" id="nsSelect" lay-filter="nsSelect">
+              </select>
+            </div>
+        </div>
+      </ul>
+
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item"><a href="{% url 'logout' %}">退出登录</a></li>
+    </ul>
+  </div>
+
+  <div class="layui-side  layui-bg-cyan">
+    <div class="layui-side-scroll">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree layui-bg-cyan layui-inline"  lay-filter="demo">
+        <li class="layui-nav-item">
+            <a href="{% url 'index' %}">平台概述</a>
+        </li>
+
+        <li class="layui-nav-item {% block nav-item-1 %}{% endblock %}" >
+          <a class="" href="javascript:;">Kubernetes</a>
+          <dl class="layui-nav-child ">
+            <dd><a href="{% url 'nodes' %}" class="{% block nav-this-1-1 %} {% endblock %}">Nodes</a></dd>
+            <dd><a href="{% url 'namespaces' %}" class="{% block nav-this-1-2 %} {% endblock %}">Namespaces</a></dd>
+            <dd><a href="{% url 'persistentvolunmes' %}" class="{% block nav-this-1-3 %} {% endblock %}">PersistentVolumes</a> </dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item {% block nav-item-2 %}{% endblock %}">
+          <a href="javascript:;">工作负载</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;" class="{% block nav-this-2-1 %} {% endblock %}">Deployments</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-this-2-2 %} {% endblock %}">DaemonSets</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-this-2-3 %} {% endblock %}">Pods</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-this-2-4 %} {% endblock %}">CronJobs</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-this-2-5 %} {% endblock %}">Jobs</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item {% block nav-item-3 %}{% endblock %}">
+          <a href="javascript:;">负载均衡</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;" class="{% block nav-this-3-1 %} {% endblock %}">Services</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-this-3-2 %} {% endblock %}">Ingresses</a></dd>
+            <dd><a href="javascript:;" class="{% block nav-this-3-3 %} {% endblock %}">StatefulSets</a></dd>
+          </dl>
+        </li>
+        <li class="layui-nav-item {% block nav-item-4 %}{% endblock %}">
+          <a href="javascript:;">存储于配置</a>
+          <dl class="layui-nav-child">
+            <dd><a href="javascript:;"  class="{% block nav-this-4-1 %} {% endblock %}">PersistentVolumeClaims </a></dd>
+            <dd><a href="javascript:;"  class="{% block nav-this-4-2 %} {% endblock %}">ConfigMaps</a></dd>
+            <dd><a href="{% url 'secrets' %}"  class="{% block nav-this-4-3 %} {% endblock %}">Secrets</a></dd>
+          </dl>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="layui-body" style="background-color: #edeff0">
+    <!-- 内容主体区域 -->
+    <div style="padding: 15px;">
+        {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  <div class="layui-footer">
+    <!-- 底部固定区域 -->
+    © ywcsb.vip
+  </div>
+</div>
+<script src="/static/layui/layui.js"></script>
+<script>
+    // 处理时间类
+    function dateFtt(fmt,date)
+        { //author: meizz
+         let o = {
+         "M+" : date.getMonth()+1,     //月份
+         "d+" : date.getDate(),     //日
+         "h+" : date.getHours(),     //小时
+         "m+" : date.getMinutes(),     //分
+         "s+" : date.getSeconds(),     //秒
+         "q+" : Math.floor((date.getMonth()+3)/3), //季度
+         "S" : date.getMilliseconds()    //毫秒
+         };
+         if(/(y+)/.test(fmt))
+         fmt=fmt.replace(RegExp.$1, (date.getFullYear()+"").substr(4 - RegExp.$1.length));
+         for(var k in o)
+         if(new RegExp("("+ k +")").test(fmt))
+         fmt = fmt.replace(RegExp.$1, (RegExp.$1.length===1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+         return fmt;
+        }
+
+    function labelsFormat(res) {
+        if (res.labels == null) {
+            return '<span style="border:1px solid #2D93CA;border-radius: 8px">Null</span>'
+        } else {
+            let result = ''
+            for (let key in res.labels) {
+                result += '<span style="border:1px solid #2D93CA;border-radius: 8px">' +
+                    key + '：' + res.labels[key] + '</span>' + '<br>'
+            }
+            return result
+        }
+    }
+</script>
+
+{% block js %}
+
+{% endblock %}
+<script>
+//JavaScript代码区域
+layui.use(['element','form', 'layer'], function(){
+    var element = layui.element;
+    var form = layui.form;
+    var $ = layui.jquery
+    var layer = layui.layer
+    $.ajax({
+        type: "GET",
+        timeout: 5000,
+        async: false,
+        url: '{% url "namespace_api" %}',
+        success: function (result) {
+            nsSelect = $('#nsSelect')
+            if (result.code === 0) {
+                for(let index in result.data) {
+                    row = result.data[index]
+                    if (row.name === 'default') {
+                        nsSelect.append('<option  value=' +row.name + ' selected>' + row.name +'</option>')
+                    } else {
+                        nsSelect.append('<option value=' + row.name + '>' + row.name + '</option>')
+                    }
+                }
+
+            }else {
+                nsSelect.append('<option value="default" selected>default</option>')
+                storage.setItem('namespace', 'default')
+                nsSelect.attr('disabled', 'disabled') //禁用选择框
+                layer.msg(result.msg)
+            }
+            form.render('select', 'nsSelectText')
+            nsSelect.val('default') // 选择默认
+        },
+        error: function () {
+            layer.msg('服务器接口异常！')
+        },
+
+    })
+    // 将当前选择的命名空间保存到本地浏览器session存储，以便其他页面能获取到当前选择的命名空间
+    var storage = window.sessionStorage
+    var namespace = storage.getItem('namespace')
+    var current_ns = form.val('nsSelectText')['city']
+
+    if (namespace == null) {
+        storage.setItem('namespace', current_ns)
+    } else {
+        $('#nsSelect').val(namespace)
+        form.render('select', 'nsSelectText')
+    }
+    form.on('select(nsSelect)', function(data){
+        storage.setItem('namespace', data.value)
+      });
+});
+</script>
+</body>
+</html>
+
+

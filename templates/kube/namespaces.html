@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block nav-item-1 %}
+layui-nav-itemed
+{% endblock %}
+{% block nav-this-1-2 %}
+layui-this
+{% endblock %}
+
+{% block title %}
+命名空间
+{% endblock %}
+
+
+{% block content %}
+    {% csrf_token %}
+
+    <script type="text/html" id="toolbarDemo">
+      <div class="demoTable">
+          <button class="layui-btn layui-btn-sm" lay-event="addData">创建</button>
+          <div class="layui-inline">
+            <input type="text" class="layui-input" name="name" id="demoReload" autocomplete="off">
+          </div>
+          <button class="layui-btn" id="searchBtn" lay-event="searchBtn" data-type="reload">搜索</button>
+        </div>
+    </script>
+    <table class="layui-hide" id="nstable" lay-filter="nstable"></table>
+
+    <script type="text/html" id="barDemo">
+      <a class="layui-btn layui-btn-xs" lay-event="yaml">yaml</a>
+      <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+    </script>
+{% endblock %}
+
+{% block js %}
+<script>
+layui.use('table', function(){
+  var table = layui.table;
+  var $ = layui.jquery
+
+  table.render({
+    elem: '#nstable'
+    ,url:'{% url "namespace_api" %}'
+    ,toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
+    ,defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
+      title: '提示'
+      ,layEvent: 'LAYTABLE_TIPS'
+      ,icon: 'layui-icon-tips'
+    }]
+    ,title: '用户数据表'
+    ,cols: [[
+      {field:'name', title:'名称',sort: true, align: 'center'}
+      ,{field:'labels', title:'标签', align: 'center', templet: labelsFormat}
+      ,{field:'create_time', title:'创建时间',sort: true, align: 'center', templet: function (res) {
+                  let now = new Date(res.create_time)
+                  return dateFtt('yyyy-MM-dd hh:mm:ss', now)
+                }}
+      ,{fixed: 'right', title:'操作', toolbar: '#barDemo', align: 'center'}
+    ]]
+    ,page: true
+    ,id: 'notb'
+
+  })
+
+  //监听行工具事件
+  table.on('tool(nstable)', function(obj) {
+      var data = obj.data;
+      //console.log(obj)
+      if (obj.event === 'del') {
+          layer.confirm('真的删除'+data['name'] + '这个命名空间吗', function (index) {
+              $.ajax({
+                  url: '{% url 'namespace_api' %}',
+                  data: data,
+                  type: 'DELETE',
+                  contentType:"application/json",
+                  headers:{'X-CSRFToken': "{{ csrf_token }}"},
+                  success: function (result) {
+                      if (result.code === 0) {
+                          layer.msg(result.msg, {icon: 6})
+                           obj.del();
+                      }else {
+                          layer.msg(result.msg, {icon: 5})
+                      }
+                  },
+                  error: function (){
+                      layer.msg('服务器接口异常', {icon: 5})
+                  }
+
+              })
+          });
+      } else if (obj.event === 'yaml') {
+            console.log(obj)
+      }
+  })
+    // 监听搜索ID事件
+    table.on('toolbar(nstable)', function(obj){
+        let search_key = $('#demoReload').val()
+        switch(obj.event){
+          case 'searchBtn':
+            table.reload('notb', {
+            where: {
+                search_key: search_key
+            }
+            ,page: {
+                curr: 1
+            }
+        })
+          break;
+          case 'addData':
+
+          break;
+
+          //自定义头工具栏右侧图标 - 提示
+          case 'LAYTABLE_TIPS':
+            layer.alert('这是工具栏右侧自定义的一个图标按钮');
+          break;
+        }
+      });
+  var d = new Date();
+
+
+})
+</script>
+{% endblock %}

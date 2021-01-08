@@ -1,0 +1,19 @@
+from django.urls import path
+from django.views.generic import TemplateView
+
+from devops_kubernetes.k8s_login import self_login_request
+
+from kube.views import NamespaceApiView, NodesApiView, PersistentVolunmeApiView
+
+urlpatterns = [
+    path('nodes/', self_login_request(TemplateView.as_view(template_name="kube/nodes.html")), name='nodes'),
+    path('namespaces/', self_login_request(
+        TemplateView.as_view(template_name="kube/namespaces.html")), name='namespaces'
+    ),
+    path('persistentvolunmes/', self_login_request(
+        TemplateView.as_view(template_name='kube/persistentvolumes.html')), name='persistentvolunmes'
+         ),
+    path('namespace_api/', NamespaceApiView.as_view(), name='namespace_api'),
+    path('nodes_api/', NodesApiView.as_view(), name='nodes_api'),
+    path('persistentvolunmes_api/', PersistentVolunmeApiView.as_view(), name='persistentvolunmes_api')
+]
