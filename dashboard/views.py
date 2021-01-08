@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
 from django.views.generic import View
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
 from django.utils.decorators import method_decorator
 
 
 from pathlib import Path
 
-from kubernetes import client, config
+from kubernetes import client
 
-from devops_kubernetes.k8s_login import auth_check, self_login_request, load_auth
+from devops_kubernetes.k8s_login import auth_check, self_login_request, load_auth, paging_data
 
 
 # Create your views here.
@@ -54,38 +54,11 @@ class LogIn(View):
 
 
 def logout(request):
-    request.session.delete()
+    request.session.clear()
     return redirect('login')
 
 
 class IndexViewApi(View):
     @method_decorator(self_login_request)
     def get(self, request):
-        return JsonResponse({'code': 1, 'msg': 'test测试使用'})
-
-
-class NamespaceApi(View):
-    @method_decorator(self_login_request)
-    def get(self, request):
-        auth_type = self.request.session.get('auth_type')
-        token = self.request.session.get('token')
-        load_auth(auth_type, token)
-        core_api = client.CoreV1Api()
-        data = list()
-        try:
-            for ns in core_api.list_namespace().items:
-                name = ns.metadata.name
-                labels = ns.metadata.labels
-                create_time = ns.metadata.creation_timestamp
-                namespace = {"name": name, "labels": labels, "create_time": create_time}
-                data.append(namespace)
-            code = 0
-            msg = '数据返回成功！'
-        except client.exceptions.ApiException as e:
-            code = 1
-            if e.status == 403:
-                msg = '没有访问权限！，默认使用default空间'
-            else:
-                msg = '获取数据失败！'
-        result = {'code': code, 'msg': msg, 'count': len(data), 'data': data}
-        return JsonResponse(result)
+        return render(request, 'test.html')

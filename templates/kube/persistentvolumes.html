@@ -3,12 +3,12 @@
 {% block nav-item-1 %}
 layui-nav-itemed
 {% endblock %}
-{% block nav-this-1-2 %}
+{% block nav-this-1-3 %}
 layui-this
 {% endblock %}
 
 {% block title %}
-命名空间
+持久卷
 {% endblock %}
 
 
@@ -40,7 +40,7 @@ layui.use('table', function(){
 
   table.render({
     elem: '#nstable'
-    ,url:'{% url "namespace_api" %}'
+    ,url:'{% url "persistentvolunmes_api" %}'
     ,toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
     ,defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
       title: '提示'
@@ -50,7 +50,12 @@ layui.use('table', function(){
     ,title: '用户数据表'
     ,cols: [[
       {field:'name', title:'名称',sort: true, align: 'center'}
-      ,{field:'labels', title:'标签', align: 'center', templet: labelsFormat}
+      ,{field:'capacity', title:'容量', align: 'center'}
+      ,{field:'access_modes', title:'访问模式', align: 'center'}
+      ,{field:'reclaim_policy', title:'回收策略', align: 'center'}
+      ,{field:'status', title:'状态', align: 'center'}
+      ,{field:'pvc', title:'PVC（命名空间/名称）', align: 'center'}
+      ,{field:'storage_class', title:'存储类', align: 'center'}
       ,{field:'create_time', title:'创建时间',sort: true, align: 'center', templet: function (res) {
                   let now = new Date(res.create_time)
                   return dateFtt('yyyy-MM-dd hh:mm:ss', now)
@@ -58,7 +63,7 @@ layui.use('table', function(){
       ,{fixed: 'right', title:'操作', toolbar: '#barDemo', align: 'center'}
     ]]
     ,page: true
-    ,id: 'notb'
+    ,id: 'pvtb'
 
   })
 
@@ -67,9 +72,9 @@ layui.use('table', function(){
       var data = obj.data;
       //console.log(obj)
       if (obj.event === 'del') {
-          layer.confirm('真的删除'+data['name'] + '这个命名空间吗', function (index) {
+          layer.confirm('真的删除'+data['name'] + '这个PV吗', function (index) {
               $.ajax({
-                  url: '{% url 'namespace_api' %}',
+                  url: '{% url 'persistentvolunmes_api' %}',
                   data: data,
                   type: 'DELETE',
                   contentType:"application/json",
@@ -78,7 +83,7 @@ layui.use('table', function(){
                       if (result.code === 0) {
                           layer.msg(result.msg, {icon: 6})
                            obj.del();
-                      }else {
+                      } else {
                           layer.msg(result.msg, {icon: 5})
                       }
                   },
@@ -97,7 +102,7 @@ layui.use('table', function(){
         let search_key = $('#demoReload').val()
         switch(obj.event){
           case 'searchBtn':
-            table.reload('notb', {
+            table.reload('pvtb', {
             where: {
                 search_key: search_key
             }

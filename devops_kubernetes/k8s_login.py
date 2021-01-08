@@ -1,13 +1,16 @@
 from django.conf import settings
 from django.shortcuts import redirect
 
-
 from kubernetes import client, config
 
 from pathlib import Path
 
 
-def load_auth(auth_type, token):
+def load_auth(auth_type=None, token=None, **kwargs):
+    if not auth_type and not token:
+        request = kwargs.get('request', None)
+        auth_type = request.session.get('auth_type')
+        token = request.session.get('token')
     if auth_type == 'token':
         configuration = client.Configuration()
         configuration.host = 'https://192.168.35.61:6443'
@@ -29,6 +32,7 @@ def auth_check(auth_type, token):
         code = 0
         msg = '登录成功'
     except client.exceptions.ApiException as e:
+        print(e.status)
         if auth_type == 'kube_config':
             msg = '认证文件无效'
         elif auth_type == 'token':
@@ -50,3 +54,22 @@ def self_login_request(func):
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
     return inner
+
+
+def paging_data(page, limit, data):
+    page, limit = int(page), int(limit)
+    start = (page - 1) * limit
+    end = page * limit
+    data = data[start:end]
+    return data
+
+
+def hum_convert(value):
+    import re
+    value = int(''.join(re.findall(r'\d', value)))
+    units = ["KB", "MB", "GB", "TB", "PB"]
+    size = 1024.0
+    for i in range(len(units)):
+        if (value / size) < 1:
+            return "%.2f%s" % (value, units[i])
+        value = value / size
