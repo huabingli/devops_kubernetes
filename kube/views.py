@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 
 from kubernetes import client
 
-from devops_kubernetes.k8s_login import self_login_request, load_auth, paging_data, hum_convert
+from devops_kubernetes.k8s_login import self_login_request, load_auth, paging_data, memory_convert
 
 
 # Create your views here.
@@ -73,7 +73,7 @@ class NodesApiView(View):
                 status = node.status.conditions[-1].status
                 scheduler = ("是" if node.spec.unschedulable is None else "否")
                 cpu = node.status.capacity['cpu']
-                memory = hum_convert(node.status.capacity['memory'])
+                memory = memory_convert(node.status.capacity['memory'])
                 kebelet_version = node.status.node_info.kubelet_version
                 cri_version = node.status.node_info.container_runtime_version
                 create_time = node.metadata.creation_timestamp

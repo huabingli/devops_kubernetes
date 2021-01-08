@@ -50,11 +50,11 @@
         <li class="layui-nav-item {% block nav-item-2 %}{% endblock %}">
           <a href="javascript:;">工作负载</a>
           <dl class="layui-nav-child">
-            <dd><a href="javascript:;" class="{% block nav-this-2-1 %} {% endblock %}">Deployments</a></dd>
-            <dd><a href="javascript:;" class="{% block nav-this-2-2 %} {% endblock %}">DaemonSets</a></dd>
-            <dd><a href="javascript:;" class="{% block nav-this-2-3 %} {% endblock %}">Pods</a></dd>
-            <dd><a href="javascript:;" class="{% block nav-this-2-4 %} {% endblock %}">CronJobs</a></dd>
-            <dd><a href="javascript:;" class="{% block nav-this-2-5 %} {% endblock %}">Jobs</a></dd>
+            <dd><a href="{% url 'deployment' %}" class="{% block nav-this-2-1 %} {% endblock %}">Deployments</a></dd>
+            <dd><a href="{% url 'daemonsets' %}" class="{% block nav-this-2-2 %} {% endblock %}">DaemonSets</a></dd>
+
+            <dd><a href="{% url  'statefulset' %}" class="{% block nav-this-2-3 %} {% endblock %}">StatefulSet</a></dd>
+            <dd><a href="{% url 'pods' %}" class="{% block nav-this-2-4 %} {% endblock %}">Pods</a></dd>
           </dl>
         </li>
         <li class="layui-nav-item {% block nav-item-3 %}{% endblock %}">
@@ -91,6 +91,8 @@
 </div>
 <script src="/static/layui/layui.js"></script>
 <script>
+    var storage = window.sessionStorage
+    var namespace = storage.getItem('namespace')
     // 处理时间类
     function dateFtt(fmt,date)
         { //author: meizz
@@ -167,8 +169,7 @@ layui.use(['element','form', 'layer'], function(){
 
     })
     // 将当前选择的命名空间保存到本地浏览器session存储，以便其他页面能获取到当前选择的命名空间
-    var storage = window.sessionStorage
-    var namespace = storage.getItem('namespace')
+
     var current_ns = form.val('nsSelectText')['city']
 
     if (namespace == null) {
@@ -179,6 +180,7 @@ layui.use(['element','form', 'layer'], function(){
     }
     form.on('select(nsSelect)', function(data){
         storage.setItem('namespace', data.value)
+        location.reload();
       });
 });
 </script>

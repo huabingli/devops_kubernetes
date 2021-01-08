@@ -64,7 +64,8 @@ def paging_data(page, limit, data):
     return data
 
 
-def hum_convert(value):
+# 内存转换
+def memory_convert(value):
     import re
     value = int(''.join(re.findall(r'\d', value)))
     units = ["KB", "MB", "GB", "TB", "PB"]
