@@ -51,19 +51,19 @@ layui.use('table', function(){
     }]
     ,title: '用户数据表'
     ,cols: [[
-      {field:'name', title:'名称',sort: true, width: 140, align: 'center'}
-      ,{field:'labels', title:'标签', width: 300, align: 'center', templet: labelsFormat}
-      ,{field: 'status', title: '准备就绪', width:90, align: 'center'}
-      ,{field: 'scheduler', title: '可调度', width: 80, align: 'center'}
-      ,{field: 'cpu', title: 'CPU', width: 70, align: 'center'}
-      ,{field: 'memory', title: '内存', width: 110, align: 'center'}
-      ,{field: 'kebelet_version', title: 'Kubelet版本', width: 110, align: 'center'}
-      ,{field: 'cri_version', title: 'CRI版本', width: 140, align: 'center'}
-      ,{field:'create_time', title:'创建时间',sort: true, width: 180, align: 'center', templet: function (res) {
+      {field:'name', title:'名称',sort: true, align: 'center'}
+      ,{field:'labels', title:'标签', align: 'center', templet: labelsFormat}
+      ,{field: 'status', title: '准备就绪', align: 'center'}
+      ,{field: 'scheduler', title: '可调度', align: 'center'}
+      ,{field: 'cpu', title: 'CPU',  align: 'center'}
+      ,{field: 'memory', title: '内存', align: 'center'}
+      ,{field: 'kebelet_version', title: 'Kubelet版本', align: 'center'}
+      ,{field: 'cri_version', title: 'CRI版本', align: 'center'}
+      ,{field:'create_time', title:'创建时间',sort: true, align: 'center', templet: function (res) {
                   let now = new Date(res.create_time)
                   return dateFtt('yyyy-MM-dd hh:mm:ss', now)
               }}
-      ,{title:'操作', toolbar: '#barDemo', width:150, align: 'center'}
+      ,{title:'操作', toolbar: '#barDemo', align: 'center'}
     ]]
     ,page: true
     ,id: 'nstb'
