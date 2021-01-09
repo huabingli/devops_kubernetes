@@ -1,23 +1,17 @@
 {% extends 'base.html' %}
 
-{% block nav-item-1 %}
-layui-nav-itemed
-{% endblock %}
-{% block nav-this-1-1 %}
-layui-this
-{% endblock %}
+{% block nav-item-4 %}layui-nav-itemed{% endblock %}
+{% block nav-this-4-1 %}layui-this{% endblock %}
 
-{% block title %}
-Nodes
-{% endblock %}
+{% block title %}PersistentVolumeClaims{% endblock %}
 
 
 {% block content %}
     {% csrf_token %}
     <span class="layui-breadcrumb">
       <a href="/">首页</a>
-      <a href="#">Kubernetes</a>
-      <a><cite>Nodes</cite></a>
+      <a href="#">存储于配置</a>
+      <a><cite>PersistentVolumeClaims</cite></a>
     </span>
     <script type="text/html" id="toolbarDemo">
             <div class="demoTable">
@@ -40,13 +34,14 @@ Nodes
 
 {% block js %}
 <script>
+
 layui.use('table', function(){
   var table = layui.table;
   var $ = layui.jquery
 
   table.render({
     elem: '#nstable'
-    ,url:'{% url "nodes_api" %}'
+    ,url:'{% url "persistentvolumeclaims_api" %}?namespace=' + namespace
     ,toolbar: '#toolbarDemo' //开启头部工具栏，并为其绑定左侧模板
     ,defaultToolbar: ['filter', 'exports', 'print', { //自定义头部工具栏右侧图标。如无需自定义，去除该参数即可
       title: '提示'
@@ -56,18 +51,18 @@ layui.use('table', function(){
     ,title: '用户数据表'
     ,cols: [[
       {field:'name', title:'名称',sort: true, align: 'center'}
+      ,{field:'namespace', title:'命名空间',sort: true, align: 'center'}
       ,{field:'labels', title:'标签', align: 'center', templet: labelsFormat}
-      ,{field: 'status', title: '准备就绪', align: 'center'}
-      ,{field: 'scheduler', title: '可调度', align: 'center'}
-      ,{field: 'cpu', title: 'CPU',  align: 'center'}
-      ,{field: 'memory', title: '内存', align: 'center'}
-      ,{field: 'kebelet_version', title: 'Kubelet版本', align: 'center'}
-      ,{field: 'cri_version', title: 'CRI版本', align: 'center'}
+      ,{field: 'status', title: '状态',sort: true, align: 'center'}
+      ,{field: 'volume_name', title: '卷名称',sort: true, align: 'center'}
+      ,{field: 'capacity', title: '容量',sort: true, align: 'center'}
+      ,{field: 'access_modes', title: '访问模式',sort: true, align: 'center'}
+      ,{field: 'storage_class_name', title: '存储类',sort: true, align: 'center'}
       ,{field:'create_time', title:'创建时间',sort: true, align: 'center'}
       ,{title:'操作', toolbar: '#barDemo', align: 'center'}
     ]]
     ,page: true
-    ,id: 'nstb'
+    ,id: 'pvcltb'
 
   })
 
@@ -76,9 +71,9 @@ layui.use('table', function(){
       var data = obj.data;
       //console.log(obj)
       if (obj.event === 'del') {
-          layer.confirm('真的删除'+data['name'] + '这个Nodes吗?', function (index) {
+          layer.confirm('真的删除'+data['name'] + '这个PersistentVolumeClaims吗?', function (index) {
               $.ajax({
-                  url: '{% url 'nodes_api' %}',
+                  url: '{% url 'persistentvolumeclaims_api' %}',
                   data: data,
                   type: 'DELETE',
                   contentType:"application/json",
@@ -107,7 +102,7 @@ layui.use('table', function(){
         let search_key = $('#demoReload').val()
         switch(obj.event){
           case 'searchBtn':
-            table.reload('nstb', {
+            table.reload('pvcltb', {
             where: {
                 search_key: search_key
             }

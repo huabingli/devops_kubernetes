@@ -8,7 +8,7 @@ from pathlib import Path
 
 from kubernetes import client
 
-from devops_kubernetes.k8s_login import auth_check, self_login_request, load_auth, paging_data
+from devops_kubernetes.k8s import auth_check, self_login_request, load_auth, paging_data
 
 
 # Create your views here.

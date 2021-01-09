@@ -6,6 +6,7 @@ from kubernetes import client, config
 from pathlib import Path
 
 
+# k8s认证
 def load_auth(auth_type=None, token=None, **kwargs):
     if not auth_type and not token:
         request = kwargs.get('request', None)
@@ -74,3 +75,10 @@ def memory_convert(value):
         if (value / size) < 1:
             return "%.2f%s" % (value, units[i])
         value = value / size
+
+
+# 时间转换
+def dt_format(timestamp):
+    from datetime import date, timedelta
+    t = date.strftime(timestamp + timedelta(hours=8), '%Y-%m-%d %H:%M:%S')
+    return t

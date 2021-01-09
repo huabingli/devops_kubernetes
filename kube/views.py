@@ -4,14 +4,14 @@ from django.utils.decorators import method_decorator
 
 from kubernetes import client
 
-from devops_kubernetes.k8s_login import self_login_request, load_auth, paging_data, memory_convert
+from devops_kubernetes import k8s
 
 
 # Create your views here.
 class NamespaceApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
         search_key = self.request.GET.get('search_key', None)
         data = list()
@@ -19,7 +19,7 @@ class NamespaceApiView(View):
             for ns in core_api.list_namespace().items:
                 name = ns.metadata.name
                 labels = ns.metadata.labels
-                create_time = ns.metadata.creation_timestamp
+                create_time = k8s.dt_format(ns.metadata.creation_timestamp)
                 namespace = {"name": name, "labels": labels, "create_time": create_time}
                 if search_key:
                     if search_key in name:
@@ -37,14 +37,14 @@ class NamespaceApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
     def delete(self, request):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
         try:
             core_api.delete_namespace(name)
@@ -60,9 +60,9 @@ class NamespaceApiView(View):
 
 
 class NodesApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
         search_key = self.request.GET.get('search_key', None)
         data = list()
@@ -73,10 +73,10 @@ class NodesApiView(View):
                 status = node.status.conditions[-1].status
                 scheduler = ("是" if node.spec.unschedulable is None else "否")
                 cpu = node.status.capacity['cpu']
-                memory = memory_convert(node.status.capacity['memory'])
+                memory = k8s.memory_convert(node.status.capacity['memory'])
                 kebelet_version = node.status.node_info.kubelet_version
                 cri_version = node.status.node_info.container_runtime_version
-                create_time = node.metadata.creation_timestamp
+                create_time = k8s.dt_format(node.metadata.creation_timestamp)
                 node = {"name": name, "labels": labels, "status": status,
                         "scheduler": scheduler, "cpu": cpu, "memory": memory,
                         "kebelet_version": kebelet_version, "cri_version": cri_version,
@@ -97,7 +97,7 @@ class NodesApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
@@ -110,9 +110,9 @@ class NodesApiView(View):
 
 
 class PersistentVolunmeApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
         search_key = self.request.GET.get('search_key', None)
         data = list()
@@ -130,7 +130,7 @@ class PersistentVolunmeApiView(View):
                 else:
                     pvc = "未绑定"
                 storage_class = pv.spec.storage_class_name
-                create_time = pv.metadata.creation_timestamp
+                create_time = k8s.dt_format(pv.metadata.creation_timestamp)
                 pv = dict(
                     name=name, capacity=capacity, access_modes=access_modes, reclaim_policy=reclaim_policy,
                     status=status, pvc=pvc, storage_class=storage_class, create_time=create_time
@@ -151,14 +151,14 @@ class PersistentVolunmeApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
     def delete(self, request):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
         try:
             core_api.delete_persistent_volume(name)

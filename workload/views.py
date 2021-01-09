@@ -4,14 +4,14 @@ from django.utils.decorators import method_decorator
 
 from kubernetes import client
 
-from devops_kubernetes.k8s_login import self_login_request, load_auth, paging_data
+from devops_kubernetes import k8s
 
 
 # Create your views here.
 class DeploymentApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
         namespace = self.request.GET.get('namespace')
         search_key = self.request.GET.get('search_key', None)
@@ -39,7 +39,8 @@ class DeploymentApiView(View):
                     image = dp.spec.template.spec.containers[0].image
                     images = "%s / %s" % (image, status)
 
-                create_time = dp.metadata.creation_timestamp
+                create_time = k8s.dt_format(dp.metadata.creation_timestamp)
+
                 dp = {"name": name, "namespace": namespace, "replicas": replicas,
                       "available_replicas": available_replicas, "labels": labels, "selector": selector,
                       "images": images, "create_time": create_time}
@@ -61,7 +62,7 @@ class DeploymentApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
@@ -69,7 +70,7 @@ class DeploymentApiView(View):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
         namespace = request_data.get('namespace')
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
         try:
             apps_api.delete_namespaced_deployment(name=name, namespace=namespace)
@@ -85,9 +86,9 @@ class DeploymentApiView(View):
 
 
 class DaemonSetsApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
         namespace = self.request.GET.get('namespace')
         search_key = self.request.GET.get('search_key', None)
@@ -103,7 +104,7 @@ class DaemonSetsApiView(View):
                 containers = {}
                 for c in ds.spec.template.spec.containers:
                     containers[c.name] = c.image
-                create_time = ds.metadata.creation_timestamp
+                create_time = k8s.dt_format(ds.metadata.creation_timestamp)
 
                 ds = {"name": name, "namespace": namespace, "labels": labels, "desired_number": desired_number,
                       "available_number": available_number,
@@ -126,7 +127,7 @@ class DaemonSetsApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
@@ -134,7 +135,7 @@ class DaemonSetsApiView(View):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
         namespace = request_data.get('namespace')
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
         try:
             apps_api.delete_namespaced_daemon_set(name=name, namespace=namespace)
@@ -150,9 +151,9 @@ class DaemonSetsApiView(View):
 
 
 class PodsApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
         namespace = self.request.GET.get('namespace')
         search_key = self.request.GET.get('search_key', None)
@@ -192,8 +193,7 @@ class PodsApiView(View):
                         c = {'c_name': c_name, 'c_image': c_image, 'restart_count': restart_count, 'c_status': c_status}
                         containers.append(c)
 
-                create_time = po.metadata.creation_timestamp
-
+                create_time = create_time = k8s.dt_format(po.metadata.creation_timestamp)
                 po = {"name": name, "namespace": namespace, "pod_ip": pod_ip,
                       "labels": labels, "containers": containers, "status": status,
                       "create_time": create_time}
@@ -215,7 +215,7 @@ class PodsApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
@@ -223,7 +223,7 @@ class PodsApiView(View):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
         namespace = request_data.get('namespace')
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.CoreV1Api()
         try:
             apps_api.delete_namespaced_pod(name=name, namespace=namespace)
@@ -239,9 +239,9 @@ class PodsApiView(View):
 
 
 class StatefulSetApiView(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
         namespace = self.request.GET.get('namespace')
         search_key = self.request.GET.get('search_key', None)
@@ -259,7 +259,7 @@ class StatefulSetApiView(View):
                 containers = {}
                 for c in sts.spec.template.spec.containers:
                     containers[c.name] = c.image
-                create_time = sts.metadata.creation_timestamp
+                create_time = k8s.dt_format(sts.metadata.creation_timestamp)
 
                 ds = {"name": name, "namespace": namespace, "labels": labels, "replicas": replicas,
                       "ready_replicas": ready_replicas, "service_name": service_name,
@@ -282,7 +282,7 @@ class StatefulSetApiView(View):
         page = self.request.GET.get('page', None)
         limit = self.request.GET.get('limit', None)
         if limit and page:
-            data = paging_data(page=page, limit=limit, data=data)
+            data = k8s.paging_data(page=page, limit=limit, data=data)
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
@@ -290,7 +290,7 @@ class StatefulSetApiView(View):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
         namespace = request_data.get('namespace')
-        load_auth(request=self.request)
+        k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
         try:
             apps_api.delete_namespaced_stateful_set(name=name, namespace=namespace)

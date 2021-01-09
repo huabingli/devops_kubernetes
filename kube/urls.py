@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 
-from devops_kubernetes.k8s_login import self_login_request
+from devops_kubernetes.k8s import self_login_request
 
 from kube.views import NamespaceApiView, NodesApiView, PersistentVolunmeApiView
 
