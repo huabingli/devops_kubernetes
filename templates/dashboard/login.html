@@ -182,7 +182,7 @@
                 $("#notice").html("请输入Token！").css("color", "red");
                 return
             }
-            var data = {'token': token, 'csrfmiddlewaretoken': csrf_token};
+            let data = {'token': token, 'csrfmiddlewaretoken': csrf_token};
             $.ajax({
                 type: "POST",
                 url: "{% url 'login' %}" + window.location.search,

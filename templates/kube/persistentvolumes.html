@@ -38,9 +38,12 @@ PersistentVolumes
 
 {% block js %}
 <script>
-layui.use('table', function(){
-  var table = layui.table;
+layui.use(['table', 'layer', 'form'], function(){
+  var table = layui.table
+  var layer = layui.layer
   var $ = layui.jquery
+  var form = layui.form
+
 
   table.render({
     elem: '#nstable'
@@ -113,7 +116,7 @@ layui.use('table', function(){
         })
           break;
           case 'addData':
-
+                location.href = '{% url "persistentvolunmes_create" %}'
           break;
 
           //自定义头工具栏右侧图标 - 提示
@@ -122,7 +125,6 @@ layui.use('table', function(){
           break;
         }
       });
-  var d = new Date();
 
 
 })

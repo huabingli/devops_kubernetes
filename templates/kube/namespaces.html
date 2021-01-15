@@ -11,9 +11,20 @@ layui-this
 命名空间
 {% endblock %}
 
-
 {% block content %}
     {% csrf_token %}
+    <div id="modal" style="display: none">
+    <form action="" class="layui-form">
+        <div class="layui-form-item" style="padding: 10px 100px 10px 10px">
+            <label class="layui-form-label">名称：</label>
+            <div class="layui-input-block">
+                <input type="text" name="name" lay-verify="required" lay-reqtext="'名称是必填项！" autocomplete="off" class="layui-input">
+                <br><br>
+                <button type="button" class="layui-btn" lay-submit="" lay-filter="btn" style="margin-left: 25%">立即提交</button>
+            </div>
+        </div>
+    </form>
+</div>
     <span class="layui-breadcrumb">
       <a href="/">首页</a>
       <a href="#">Kubernetes</a>
@@ -38,9 +49,12 @@ layui-this
 
 {% block js %}
 <script>
-layui.use('table', function(){
-  var table = layui.table;
+layui.use(['table', 'layer', 'form'], function(){
+  var table = layui.table
+  var layer = layui.layer
   var $ = layui.jquery
+  var form = layui.form
+
 
   table.render({
     elem: '#nstable'
@@ -108,7 +122,33 @@ layui.use('table', function(){
         })
           break;
           case 'addData':
+            layer.open({
+                title: '创建命名空间'
+                ,type: 1
+                ,content: $('#modal').html()
+                ,success: function (layero, index) {
+                    form.on('submit(btn)', function (data) {
+                        data = data.field
+                        $.ajax({
+                            url: '{% url 'namespace_api' %}'
+                            ,type: 'POST'
+                            ,data: data
+                            ,headers:{'X-CSRFToken': "{{ csrf_token }}"}
+                            ,dataType: 'json'
+                            ,success: function (result) {
+                                if(result.code === 0) {
+                                    layer.msg(result.msg, {icon: 6})
+                                    window.location.reload();
+                                } else {
+                                    layer.msg(result.msg, {icon: 5})
+                                }
+                            }
 
+                        })
+
+                    })
+                }
+            })
           break;
 
           //自定义头工具栏右侧图标 - 提示
@@ -117,8 +157,6 @@ layui.use('table', function(){
           break;
         }
       });
-  var d = new Date();
-
 
 })
 </script>

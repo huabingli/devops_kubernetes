@@ -27,7 +27,7 @@
       </ul>
 
     <ul class="layui-nav layui-layout-right">
-      <li class="layui-nav-item"><a href="{% url 'logout' %}">退出登录</a></li>
+      <li class="layui-nav-item" id="logOut"><a href="{% url 'logout' %}">退出登录</a></li>
     </ul>
   </div>
 
@@ -90,9 +90,13 @@
 </div>
 <script src="/static/layui/layui.js"></script>
 <script>
+
     var storage = window.sessionStorage
     var namespace = storage.getItem('namespace')
-
+    var x = document.getElementById('logOut'); //获取id为btn的元素
+    x.onclick = function () { //绑定点击事件
+        storage.removeItem('namespace')
+    }
     function labelsFormat(res) {
         if (res.labels == null) {
             return '<span style="border:1px solid #2D93CA;border-radius: 8px">Null</span>'
@@ -151,7 +155,6 @@ layui.use(['element','form', 'layer'], function(){
     // 将当前选择的命名空间保存到本地浏览器session存储，以便其他页面能获取到当前选择的命名空间
 
     var current_ns = form.val('nsSelectText')['city']
-
     if (namespace == null) {
         storage.setItem('namespace', current_ns)
     } else {
@@ -160,7 +163,7 @@ layui.use(['element','form', 'layer'], function(){
     }
     form.on('select(nsSelect)', function(data){
         storage.setItem('namespace', data.value)
-        location.reload();
+        window.location.reload();
       });
 });
 </script>

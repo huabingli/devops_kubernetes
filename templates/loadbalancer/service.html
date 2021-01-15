@@ -83,6 +83,9 @@ layui.use('table', function(){
                     '端口: ' + data.port + '<br>' +
                     '协议: ' + data.protocol + '<br>' +
                     '容器端口: ' + data.target_port + '<br>'
+            if (data.node_port != null) {
+                result += data.node_port
+            }
         }
         return result
     }

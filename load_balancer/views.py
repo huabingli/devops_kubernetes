@@ -31,7 +31,7 @@ class ServicesApiView(View):
                     protocol = p.protocol
                     node_port = ""
                     if type == "NodePort":
-                        node_port = " <br> NodePort: %s" % p.node_port
+                        node_port = "NodePort: %s <br>" % p.node_port
 
                     port = {'port_name': port_name, 'port': port, 'protocol': protocol, 'target_port': target_port,
                             'node_port': node_port}
@@ -39,7 +39,6 @@ class ServicesApiView(View):
 
                 selector = svc.spec.selector
                 create_time = k8s.dt_format(svc.metadata.creation_timestamp)
-
                 # 确认是否关联Pod
                 endpoint = ""
                 for ep in core_api.list_namespaced_endpoints(namespace=namespace).items:
