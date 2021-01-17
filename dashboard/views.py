@@ -1,14 +1,11 @@
 from django.shortcuts import render, redirect
 from django.views.generic import View
-from django.http import JsonResponse, QueryDict
+from django.http import JsonResponse
 from django.utils.decorators import method_decorator
-
 
 from pathlib import Path
 
-from kubernetes import client
-
-from devops_kubernetes.k8s import auth_check, self_login_request, load_auth, paging_data
+from devops_kubernetes import k8s
 
 
 # Create your views here.
@@ -21,7 +18,7 @@ class LogIn(View):
     def post(self, request, *args, **kwargs):
         token = self.request.POST.get('token', None)
         if token:
-            result = auth_check(token=token, auth_type='token')
+            result = k8s.auth_check(token=token, auth_type='token')
             if result.get('code') == 0:
                 request.session['is_login'] = True
                 request.session['auth_type'] = 'token'
@@ -42,7 +39,7 @@ class LogIn(View):
                 return JsonResponse({'code': 1, 'msg': '请刷新后重试！'})
             except Exception as e:
                 return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
-            result = auth_check(auth_type='kube_config', token=random_str)
+            result = k8s.auth_check(auth_type='kube_config', token=random_str)
             if result.get('code') == 0:
                 request.session['is_login'] = True
                 request.session['auth_type'] = 'kube_config'
@@ -59,6 +56,6 @@ def logout(request):
 
 
 class IndexViewApi(View):
-    @method_decorator(self_login_request)
+    @method_decorator(k8s.self_login_request)
     def get(self, request):
         return render(request, 'test.html')

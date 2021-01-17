@@ -1,3 +1,5 @@
+import json
+
 from django.views.generic import View
 from django.http import JsonResponse, QueryDict
 from django.utils.decorators import method_decorator
@@ -239,14 +241,19 @@ class PersistentVolunmeApiView(View):
         )
         try:
             core_api.create_persistent_volume(body=body)
-            code, msg = 0, '创建{}成功！'.format(name)
         except client.exceptions.ApiException as e:
-            code = 1
+            code = e.status
             if e.status == 403:
                 msg = '没有创建权限！'
             elif e.status == 409:
                 msg = 'PV名称冲突'
+            elif e.status == 422:
+                e = json.loads(e.body)
+                msg = e.get('message')
             else:
+                print(e)
                 msg = '创建失败！'
+        else:
+            code, msg = 0, '创建{}成功！'.format(name)
         result = {'code': code, 'msg': msg}
         return JsonResponse(result)

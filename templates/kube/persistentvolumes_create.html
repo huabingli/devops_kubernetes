@@ -25,7 +25,7 @@ PersistentVolumes
                 <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px">
                     <legend>创建PersistentVolumes</legend>
                 </fieldset>
-                <form class="layui-form" onclick="return false">
+                <form class="layui-form">
                     <div class="layui-form-item">
                         <label class="layui-form-label">名称：</label>
                         <div class="layui-input-block">
@@ -89,7 +89,7 @@ PersistentVolumes
                         <br>
                         <div class="layui-form-item">
                             <div class="layui-input-block">
-                                <button type="submit" class="layui-btn" lay-submit="" lay-filter="btn">立即提交</button>
+                                <button type="submit" class="layui-btn" lay-submit="" lay-filter="btn" onclick="return false">立即提交</button>
                                 <button type="reset" class="layui-btn layui-btn-primary">重置</button>
                             </div>
                         </div>
@@ -113,7 +113,6 @@ layui.use(['form', 'table', 'layer'], function(){
   //监听提交
   form.on('submit(btn)', function(data){
     data = data.field;
-    csrf_token = $('[name="csrfmiddlewaretoken"]').val();
     $.ajax({
         url: '{% url 'persistentvolunmes_api' %}',
         type: 'POST',
@@ -124,7 +123,7 @@ layui.use(['form', 'table', 'layer'], function(){
                 layer.msg(result.msg, {icon: 6})
                 window.location.href = '{% url "persistentvolunmes" %}'
             } else {
-                layer.msg(result.msg, {icon: 5})
+                layer.msg(result.msg, {icon: 5, time: 5000})
             }
         },
         error: function (){

@@ -16,6 +16,7 @@ Including another URLconf
 # from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from django.views.generic.base import RedirectView
 
 from devops_kubernetes.k8s import self_login_request
 
@@ -25,5 +26,5 @@ urlpatterns = [
     path('kube/', include('kube.urls')),
     path('load_balancer/', include('load_balancer.urls')),
     path('storage/', include('storage.urls')),
-    path('workload/', include('workload.urls'))
+    path('workload/', include('workload.urls')),
 ]

@@ -84,6 +84,58 @@ class DeploymentApiView(View):
         result = {'code': code, 'msg': msg}
         return JsonResponse(result)
 
+    def post(self, request):
+        data = self.request.POST
+        name = data.get('name', None)
+        namespace = data.get('namespace', None)
+        image = data.get('image', None)
+        replicas = int(data.get('replicas', None))
+        print(data)
+        try:
+            labels = dict()
+            for p in data.get('labels', None).split(','):
+                c = p.split('=')
+                if not len(c) == 2:
+                    raise IndexError('标签格式错误')
+                k, v = c[0], c[1]
+                labels.update(k=v)
+        except IndexError:
+            code, msg = 1, '标签格式错误！'
+            result = {'code': code, 'msg': msg}
+            return JsonResponse(result)
+
+        resources = data.get('resources', None)
+        health_liveness = data.get('health[liveness]', None)
+        health_readiness = data.get('health[readiness]', None)
+        if resources == '1c2g':
+            cpu, memory = 1, 2
+        elif request == '2c4g':
+            cpu, memory = 2, 4
+        elif request == '':
+            cpu, memory = 4, 8
+        else:
+            cpu, memory = 0.5, 1
+        requests_cpu = cpu - cpu * 0.2
+        requests_memory = memory - memory * 0.2
+        resources = client.V1ResourceRequirements(
+            limits={'cpu': cpu, 'memory': memory},
+            requests={'cpu': requests_cpu, 'memory': requests_memory}
+        )
+
+        if health_liveness == 'on':
+            livenss_probe = client.V1Probe(http_get='/', timeout_seconds=30, initial_delay_seconds=30)
+        else:
+            livenss_probe = ''
+
+        if health_readiness == 'on':
+            readiness_probe = client.V1Probe(http_get='/', timeout_seconds=30, initial_delay_seconds=30)
+        else:
+            readiness_probe = ''
+
+        code, msg = 0, '删除成功！'
+        result = {'code': code, 'msg': msg}
+        return JsonResponse(result)
+
 
 class DaemonSetsApiView(View):
     @method_decorator(k8s.self_login_request)
