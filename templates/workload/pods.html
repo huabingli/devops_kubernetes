@@ -55,7 +55,7 @@ layui.use('table', function(){
       ,{field:'pod_ip', title:'IP地址',sort: true, align: 'center'}
       ,{field:'labels', title:'标签', align: 'center', templet: labelsFormat}
       ,{field:'containers', title:'容器组',sort: true, align: 'center', templet: containersFormat}
-      ,{field:'status', title:'状态',sort: true, align: 'center', templet: statusFormat}
+      ,{field:'status', title:'镜像名称/状态',sort: true, align: 'center', templet: statusFormat}
       ,{field:'create_time', title:'创建时间',sort: true, align: 'center'}
       ,{title:'操作', toolbar: '#barDemo', align: 'center'}
     ]]
@@ -65,9 +65,9 @@ layui.use('table', function(){
   })
     function containersFormat(d) {
         if (d.containers) {
-            result = ''
+            let result = ''
             for(let key in d.containers) {
-                data = d.containers[key];
+                let data = d.containers[key];
                 result += key + ':' + data.c_name  + '=' + data.c_image + '<br>' +
                     '重启次数:' + data.restart_count  + '<br>' +
                     '状态:' + data.c_status + '<br>'
@@ -79,9 +79,12 @@ layui.use('table', function(){
     }
     // 如果status为None，使用容器状态显示
     function statusFormat(d){
+        let result = ''
         if(d.status == "None"){
             for(let key in d.containers) {
-                result += d.containers[key].c_status + '<br>'
+                let data = d.containers[key]
+                result += key + '：' + data.c_name + '/' + data.c_status + '<br>'
+
             }
             return result
         } else {
@@ -115,7 +118,13 @@ layui.use('table', function(){
               })
           });
       } else if (obj.event === 'yaml') {
-            console.log(obj)
+            let data = obj.data
+            layer.open({
+                title: 'YAML'
+                ,type: 2
+                ,area: ['70%', '80%'],
+                content: "{% url 'ace_editor' %}?resource=pod&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
+            })
       }
   })
     // 监听搜索ID事件

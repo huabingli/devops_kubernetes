@@ -93,7 +93,13 @@ layui.use('table', function(){
               })
           });
       } else if (obj.event === 'yaml') {
-            console.log(obj)
+            let data = obj.data
+            layer.open({
+                title: 'YAML'
+                ,type: 2
+                ,area: ['70%', '80%'],
+                content: "{% url 'ace_editor' %}?resource=pvc&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
+            })
       }
   })
     // 监听搜索ID事件

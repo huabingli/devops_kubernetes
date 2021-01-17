@@ -1,3 +1,5 @@
+import json
+
 from django.views.generic import View
 from django.http import JsonResponse, QueryDict
 from django.utils.decorators import method_decorator
@@ -85,20 +87,22 @@ class DeploymentApiView(View):
         return JsonResponse(result)
 
     def post(self, request):
+        k8s.load_auth(request=self.request)
+        apps_api = client.AppsV1Api()
         data = self.request.POST
         name = data.get('name', None)
         namespace = data.get('namespace', None)
         image = data.get('image', None)
         replicas = int(data.get('replicas', None))
-        print(data)
         try:
             labels = dict()
             for p in data.get('labels', None).split(','):
                 c = p.split('=')
+                print(c)
                 if not len(c) == 2:
                     raise IndexError('标签格式错误')
                 k, v = c[0], c[1]
-                labels.update(k=v)
+                labels[k] = v
         except IndexError:
             code, msg = 1, '标签格式错误！'
             result = {'code': code, 'msg': msg}
@@ -118,8 +122,8 @@ class DeploymentApiView(View):
         requests_cpu = cpu - cpu * 0.2
         requests_memory = memory - memory * 0.2
         resources = client.V1ResourceRequirements(
-            limits={'cpu': cpu, 'memory': memory},
-            requests={'cpu': requests_cpu, 'memory': requests_memory}
+            limits={'cpu': cpu, 'memory': '{}Gi'.format(memory)},
+            requests={'cpu': requests_cpu, 'memory': '{}Gi'.format(requests_memory)}
         )
 
         if health_liveness == 'on':
@@ -132,7 +136,43 @@ class DeploymentApiView(View):
         else:
             readiness_probe = ''
 
-        code, msg = 0, '删除成功！'
+        body = client.V1Deployment(
+            api_version='apps/v1',
+            kind='Deployment',
+            metadata=client.V1ObjectMeta(name=name, labels=labels),
+            spec=client.V1DeploymentSpec(
+                replicas=replicas,
+                selector={'matchLabels': labels},
+                template=client.V1PodTemplateSpec(
+                    metadata=client.V1ObjectMeta(labels=labels),
+                    spec=client.V1PodSpec(
+                        containers=[client.V1Container(
+                            name='web',
+                            image=image,
+                            env=[{'name': 'TEST', 'value': '123'}, {'name': 'DEV', 'value': '456'}],
+                            ports=[client.V1ContainerPort(container_port=80)],
+                            resources=resources
+                        )]
+                    )
+                )
+            )
+        )
+        try:
+            apps_api.create_namespaced_deployment(namespace=namespace, body=body)
+        except client.exceptions.ApiException as e:
+            code = e.status
+            if e.status == 403:
+                msg = '没有创建权限！'
+            elif e.status == 409:
+                msg = 'Deployment已经存在！'
+            elif e.status == 422:
+                e = json.loads(e.body)
+                msg = e.get('message')
+            else:
+                print(e)
+                msg = '创建失败！'
+        else:
+            code, msg = 0, '创建{}成功！'.format(name)
         result = {'code': code, 'msg': msg}
         return JsonResponse(result)
 
@@ -245,7 +285,7 @@ class PodsApiView(View):
                         c = {'c_name': c_name, 'c_image': c_image, 'restart_count': restart_count, 'c_status': c_status}
                         containers.append(c)
 
-                create_time = create_time = k8s.dt_format(po.metadata.creation_timestamp)
+                create_time = k8s.dt_format(po.metadata.creation_timestamp)
                 po = {"name": name, "namespace": namespace, "pod_ip": pod_ip,
                       "labels": labels, "containers": containers, "status": status,
                       "create_time": create_time}

@@ -40,9 +40,12 @@ Nodes
 
 {% block js %}
 <script>
-layui.use('table', function(){
+layui.use(['table', 'layer'], function(){
   var table = layui.table;
-  var $ = layui.jquery
+  var $ = layui.jquery;
+  var layer = layui.layer;
+
+
 
   table.render({
     elem: '#nstable'
@@ -73,7 +76,7 @@ layui.use('table', function(){
 
   //监听行工具事件
   table.on('tool(nstable)', function(obj) {
-      var data = obj.data;
+      let data = obj.data;
       //console.log(obj)
       if (obj.event === 'del') {
           layer.confirm('真的删除'+data['name'] + '这个Nodes吗?', function (index) {
@@ -98,7 +101,13 @@ layui.use('table', function(){
               })
           });
       } else if (obj.event === 'yaml') {
-            console.log(obj)
+          let data = obj.data
+            layer.open({
+                title: 'YAML'
+                ,type: 2
+                ,area: ['70%', '80%'],
+                content: "{% url 'ace_editor' %}?resource=node&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
+            })
       }
   })
     // 监听搜索ID事件

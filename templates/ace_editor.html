@@ -1,0 +1,58 @@
+<link rel="stylesheet" href="/static/layui/css/layui.css">
+
+<div id="code-editor" style="height: 98%;width: 98%"></div>
+
+<script src="/static/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ace/theme/theme-github.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/ace/mode/mode-yaml.js" type="text/javascript" charset="utf-8"></script>
+<script src="/static/layui/layui.js"></script>
+{% csrf_token %}
+
+<script>
+    // 初始化对象
+    let editor = ace.edit('code-editor')
+
+    // 设置编辑器样式，对应theme-*.js文件
+    editor.setTheme('ace/theme/github')
+    // 设置代码语言, 对应mode-*.js文件
+    editor.session.setMode('ace/mode/yaml')
+
+    // 设置打印线是否显示
+    editor.setShowPrintMargin(false)
+
+    // 字体大小
+    editor.setFontSize(16)
+    // 设置只读（true时只读，用于展示代码
+    editor.setReadOnly(false)
+
+    // 获取编辑内容
+    /*
+    editor.getSession().on('change', function (){
+        let code = editor.getValue()
+        console.log(code)
+    })
+    */
+
+    layui.use('layer', function () {
+        var $ = layui.jquery;
+        var layer = layui.layer
+
+        $.ajax({
+            url: "{% url 'exportresource_api' %}?" + 'namespace=' + '{{ namespace }}' + '&resource=' + '{{ resource }}' + '&name=' + '{{ name }}'
+            ,type: 'GET'
+            ,success: function (result) {
+                if (result.code === 0) {
+                    console.log(result)
+                    editor.setValue(result.data)
+                } else {
+                    layer.msg(result.msg, {icon: 5})
+                }
+            }
+            ,error: function (result) {
+                layer.msg('服务器接口异常', {icon: 5})
+            }
+        })
+    })
+
+
+</script>

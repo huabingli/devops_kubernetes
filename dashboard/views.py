@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect
 from django.views.generic import View
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from pathlib import Path
+
+from kubernetes import client
 
 from devops_kubernetes import k8s
 
@@ -59,3 +62,110 @@ class IndexViewApi(View):
     @method_decorator(k8s.self_login_request)
     def get(self, request):
         return render(request, 'test.html')
+
+
+class ExportResourceViewApi(View):
+    @method_decorator(k8s.self_login_request)
+    def get(self, request):
+        import yaml
+        import json
+        k8s.load_auth(request=self.request)
+        core_api = client.CoreV1Api()
+        apps_api = client.AppsV1Api()
+        networking_api = client.NetworkingV1beta1Api()
+        namespace = self.request.GET.get('namespace', None)
+        resource = self.request.GET.get('resource', None)
+        name = self.request.GET.get('name', None)
+
+        try:
+            if resource == 'namespace':
+                data_dict = core_api.read_namespace(name=name, _preload_content=False).read()
+            elif resource == 'deployment':
+                data_dict = apps_api.read_namespaced_deployment(
+                    name=name,
+                    namespace=namespace,
+                    _preload_content=False
+                ).read()
+            elif resource == 'replicaset':
+                data_dict = apps_api.read_namespaced_replica_set(
+                    name=name,
+                    namespace=namespace,
+                    _preload_content=False
+                ).read()
+            elif resource == 'daemonset':
+                data_dict = apps_api.read_namespaced_daemon_set(
+                    namespace=namespace,
+                    name=name,
+                    _preload_content=False
+                ).read()
+            elif resource == 'statefulset':
+                data_dict = apps_api.read_namespaced_stateful_set(
+                    name=name,
+                    namespace=namespace,
+                    _preload_content=False
+                ).read()
+            elif resource == 'pod':
+                data_dict = core_api.read_namespaced_pod(
+                    name=name,
+                    namespace=namespace,
+                    _preload_content=False
+                ).read()
+            elif resource == 'service':
+                data_dict = core_api.read_namespaced_service(
+                    name=name,
+                    namespace=namespace,
+                    _preload_content=False
+                ).read()
+            elif resource == 'ingress':
+                data_dict = networking_api.read_namespaced_ingress(
+                    namespace=namespace,
+                    name=name,
+                    _preload_content=False
+                ).read()
+            elif resource == 'pvc':
+                data_dict = core_api.read_namespaced_persistent_volume_claim(
+                    name=name,
+                    namespace=namespace,
+                    _preload_content=False
+                ).read()
+            elif resource == 'pv':
+                data_dict = core_api.read_persistent_volume(name=name, _preload_content=False).read()
+            elif resource == 'node':
+                data_dict = core_api.read_node(name=name, _preload_content=False).read()
+            elif resource == 'configmap':
+                data_dict = core_api.read_namespaced_config_map(
+                    namespace=namespace,
+                    name=name,
+                    _preload_content=False
+                ).read()
+            elif resource == 'secret':
+                data_dict = core_api.read_namespaced_secret(
+                    namespace=namespace,
+                    name=name,
+                    _preload_content=False
+                ).read()
+            else:
+                raise client.exceptions.ApiException(status=400, reason='未选择资源')
+        except client.exceptions.ApiValueError as e:
+            result = {'code': 1, 'msg': '{}'.format(e)}
+        except client.exceptions.ApiException as e:
+            result = {'code': 1, 'msg': '{}'.format(e)}
+        else:
+            try:
+                data_str = str(data_dict, 'utf-8')
+                data_yaml = yaml.safe_dump(json.loads(data_str))
+            except Exception as e:
+                result = {'code': 1, 'msg': '{}'.format(e)}
+            else:
+                result = {'code': 0, 'msg': '获取数据成功', 'data': data_yaml}
+        return JsonResponse(result)
+
+
+@xframe_options_sameorigin
+def ace_editor(request):
+    if request.method == 'GET':
+        name = request.GET.get('name', None)
+        namespace = request.GET.get('namespace', None)
+        resource = request.GET.get('resource', None)
+
+        return render(request, 'ace_editor.html', {'name': name, 'namespace': namespace, 'resource': resource})
