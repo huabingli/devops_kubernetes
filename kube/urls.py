@@ -3,10 +3,11 @@ from django.views.generic import TemplateView
 
 from devops_kubernetes.k8s import self_login_request
 
-from kube.views import NamespaceApiView, NodesApiView, PersistentVolunmeApiView
+from kube.views import NamespaceApiView, NodesApiView, PersistentVolunmeApiView, NodeDetailsApiView
 
 urlpatterns = [
     path('nodes/', self_login_request(TemplateView.as_view(template_name="kube/nodes.html")), name='nodes'),
+    path('node_details/', NodeDetailsApiView.as_view(), name='node_details'),
     path('namespaces/', self_login_request(
         TemplateView.as_view(template_name="kube/namespaces.html")), name='namespaces'
     ),

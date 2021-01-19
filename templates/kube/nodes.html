@@ -34,6 +34,7 @@ Nodes
 
     <script type="text/html" id="barDemo">
       <a class="layui-btn layui-btn-xs" lay-event="yaml">yaml</a>
+      <a class="layui-btn layui-btn-xs" lay-event="details">详情</a>
       <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </script>
 {% endblock %}
@@ -101,13 +102,14 @@ layui.use(['table', 'layer'], function(){
               })
           });
       } else if (obj.event === 'yaml') {
-          let data = obj.data
             layer.open({
                 title: 'YAML'
                 ,type: 2
                 ,area: ['70%', '80%'],
                 content: "{% url 'ace_editor' %}?resource=node&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
             })
+      } else if (obj.event === 'details'){
+          window.location.href = '{% url "node_details" %}?node_name=' + data['name']
       }
   })
     // 监听搜索ID事件
@@ -126,7 +128,7 @@ layui.use(['table', 'layer'], function(){
         })
           break;
           case 'addData':
-
+            layer.msg('Node不能通过UI直接添加，请联系K8S管理人员添加', {icon: 6})
           break;
 
           //自定义头工具栏右侧图标 - 提示

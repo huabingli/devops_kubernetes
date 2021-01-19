@@ -1,12 +1,13 @@
 import json
 
 from django.views.generic import View
+from django.shortcuts import render
 from django.http import JsonResponse, QueryDict
 from django.utils.decorators import method_decorator
 
 from kubernetes import client
 
-from devops_kubernetes import k8s
+from devops_kubernetes import k8s, node_data
 
 
 # Create your views here.
@@ -86,6 +87,18 @@ class NamespaceApiView(View):
         return JsonResponse(result)
 
 
+class NodeDetailsApiView(View):
+    @method_decorator(k8s.self_login_request)
+    def get(self, request):
+        k8s.load_auth(request=self.request)
+        core_api = client.CoreV1Api()
+
+        node_name = self.request.GET.get('node_name', None)
+        n_r = node_data.node_resource(core_api, node_name)
+        n_i = node_data.node_info(core_api, node_name)
+        return render(request, 'kube/node_details.html', {'node_name': node_name, 'node_resouces': n_r, 'node_info': n_i})
+
+
 class NodesApiView(View):
     @method_decorator(k8s.self_login_request)
     def get(self, request):
@@ -94,6 +107,7 @@ class NodesApiView(View):
         search_key = self.request.GET.get('search_key', None)
         data = list()
         try:
+
             for node in core_api.list_node_with_http_info()[0].items:
                 name = node.metadata.name
                 labels = node.metadata.labels
@@ -113,19 +127,21 @@ class NodesApiView(View):
                         data.append(node)
                 else:
                     data.append(node)
-            code, msg = 0, '数据返回成功！'
         except client.exceptions.ApiException as e:
             code = 1
             if e.status == 403:
                 msg = '没有访问权限！，默认使用default空间'
             else:
                 msg = '获取数据失败！'
-        count = len(data)
-        page = self.request.GET.get('page', None)
-        limit = self.request.GET.get('limit', None)
-        if limit and page:
-            data = k8s.paging_data(page=page, limit=limit, data=data)
-        result = {'code': code, 'msg': msg, 'count': count, 'data': data}
+            result = {'code': code, 'msg': msg,}
+        else:
+            code, msg = 0, '数据返回成功！'
+            count = len(data)
+            page = self.request.GET.get('page', None)
+            limit = self.request.GET.get('limit', None)
+            if limit and page:
+                data = k8s.paging_data(page=page, limit=limit, data=data)
+            result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
     def delete(self, request):

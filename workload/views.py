@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 
 from kubernetes import client
 
-from devops_kubernetes import k8s
+from devops_kubernetes import k8s, node_data
 
 
 # Create your views here.
@@ -109,8 +109,8 @@ class DeploymentApiView(View):
             return JsonResponse(result)
 
         resources = data.get('resources', None)
-        health_liveness = data.get('health[liveness]', None)
-        health_readiness = data.get('health[readiness]', None)
+        # health_liveness = data.get('health[liveness]', None)
+        # health_readiness = data.get('health[readiness]', None)
         if resources == '1c2g':
             cpu, memory = 1, 2
         elif request == '2c4g':
@@ -126,15 +126,15 @@ class DeploymentApiView(View):
             requests={'cpu': requests_cpu, 'memory': '{}Gi'.format(requests_memory)}
         )
 
-        if health_liveness == 'on':
-            livenss_probe = client.V1Probe(http_get='/', timeout_seconds=30, initial_delay_seconds=30)
-        else:
-            livenss_probe = ''
-
-        if health_readiness == 'on':
-            readiness_probe = client.V1Probe(http_get='/', timeout_seconds=30, initial_delay_seconds=30)
-        else:
-            readiness_probe = ''
+        # if health_liveness == 'on':
+        #     livenss_probe = client.V1Probe(http_get='/', timeout_seconds=30, initial_delay_seconds=30)
+        # else:
+        #     livenss_probe = ''
+        #
+        # if health_readiness == 'on':
+        #     readiness_probe = client.V1Probe(http_get='/', timeout_seconds=30, initial_delay_seconds=30)
+        # else:
+        #     readiness_probe = ''
 
         body = client.V1Deployment(
             api_version='apps/v1',
@@ -247,68 +247,82 @@ class PodsApiView(View):
     def get(self, request):
         k8s.load_auth(request=self.request)
         core_api = client.CoreV1Api()
-        namespace = self.request.GET.get('namespace')
+        namespace = self.request.GET.get('namespace', None)
         search_key = self.request.GET.get('search_key', None)
-        data = list()
+        node_name = self.request.GET.get('node_name', None)
         try:
-            for po in core_api.list_namespaced_pod(namespace).items:
-                name = po.metadata.name
-                namespace = po.metadata.namespace
-                labels = po.metadata.labels
-                pod_ip = po.status.pod_ip
 
-                containers = []  # [{},{},{}]
-                status = "None"
-                # 只为None说明Pod没有创建（不能调度或者正在下载镜像）
-                if po.status.container_statuses is None:
-                    status = po.status.conditions[-1].reason
-                else:
-                    for c in po.status.container_statuses:
-                        c_name = c.name
-                        c_image = c.image
+            if namespace is not None:
+                data = list()
+                for po in core_api.list_namespaced_pod(namespace).items:
+                    name = po.metadata.name
+                    namespace = po.metadata.namespace
+                    labels = po.metadata.labels
+                    pod_ip = po.status.pod_ip
 
-                        # 获取重启次数
-                        restart_count = c.restart_count
+                    containers = []  # [{},{},{}]
+                    status = "None"
+                    # 只为None说明Pod没有创建（不能调度或者正在下载镜像）
+                    if po.status.container_statuses is None:
+                        status = po.status.conditions[-1].reason
+                    else:
+                        for c in po.status.container_statuses:
+                            c_name = c.name
+                            c_image = c.image
 
-                        # 获取容器状态
-                        c_status = "None"
-                        if c.ready is True:
-                            c_status = "Running"
-                        elif c.ready is False:
-                            if c.state.waiting is not None:
-                                c_status = c.state.waiting.reason
-                            elif c.state.terminated is not None:
-                                c_status = c.state.terminated.reason
-                            elif c.state.last_state.terminated is not None:
-                                c_status = c.last_state.terminated.reason
+                            # 获取重启次数
+                            restart_count = c.restart_count
 
-                        c = {'c_name': c_name, 'c_image': c_image, 'restart_count': restart_count, 'c_status': c_status}
-                        containers.append(c)
+                            # 获取容器状态
+                            c_status = "None"
+                            if c.ready is True:
+                                c_status = "Running"
+                            elif c.ready is False:
+                                if c.state.waiting is not None:
+                                    c_status = c.state.waiting.reason
+                                elif c.state.terminated is not None:
+                                    c_status = c.state.terminated.reason
+                                elif c.state.last_state.terminated is not None:
+                                    c_status = c.last_state.terminated.reason
 
-                create_time = k8s.dt_format(po.metadata.creation_timestamp)
-                po = {"name": name, "namespace": namespace, "pod_ip": pod_ip,
-                      "labels": labels, "containers": containers, "status": status,
-                      "create_time": create_time}
-                if search_key:
-                    if search_key in name:
+                            c = {
+                                'c_name': c_name, 'c_image': c_image,
+                                'restart_count': restart_count, 'c_status': c_status
+                            }
+                            containers.append(c)
+
+                    create_time = k8s.dt_format(po.metadata.creation_timestamp)
+                    po = {"name": name, "namespace": namespace, "pod_ip": pod_ip,
+                          "labels": labels, "containers": containers, "status": status,
+                          "create_time": create_time}
+                    if search_key:
+                        if search_key in name:
+                            data.append(po)
+                    else:
                         data.append(po)
-                else:
-                    data.append(po)
+
+            elif node_name is not None:
+                data = node_data.node_pods(core_api, node_name)
+            else:
+                raise client.exceptions.ApiException
             code, msg = 0, '数据返回成功！'
         except client.exceptions.ApiValueError as e:
             code, msg = 1, '{}'.format(e)
+            result = {'code': code, 'msg': msg}
         except client.exceptions.ApiException as e:
             code = 1
             if e.status == 403:
                 msg = '没有访问权限！，默认使用default空间'
             else:
                 msg = '获取数据失败！'
-        count = len(data)
-        page = self.request.GET.get('page', None)
-        limit = self.request.GET.get('limit', None)
-        if limit and page:
-            data = k8s.paging_data(page=page, limit=limit, data=data)
-        result = {'code': code, 'msg': msg, 'count': count, 'data': data}
+            result = {'code': code, 'msg': msg}
+        else:
+            count = len(data)
+            page = self.request.GET.get('page', None)
+            limit = self.request.GET.get('limit', None)
+            if limit and page:
+                data = k8s.paging_data(page=page, limit=limit, data=data)
+            result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
     def delete(self, request):
