@@ -15,13 +15,13 @@ def cpu_unit_tof(c):
 
 def memory_unit_tog(m):
     g = float
-    if m.endswith('M') or m.endswith('Mi'):
+    if m.endswith(('M', 'm')) or m.endswith('Mi'):
         m = re.findall(r'\d+', m)[0]
         g = round(float(m) / 1024, 2)
-    elif m.endswith('K') or m.endswith('Ki'):
+    elif m.endswith(('K', 'k')) or m.endswith('Ki'):
         k = re.findall(r'\d+', m)[0]
         g = round(float(k) / 1024 / 1024, 2)
-    elif m.endswith('G') or m.endswith('Gi'):
+    elif m.endswith(('G', 'g')) or m.endswith('Gi'):
         g = re.findall(r'\d+', m)[0]
     return g
 
@@ -129,7 +129,7 @@ def node_resource(core_api, n_name=None):
                 if "memory" in c.resources.limits:
                     memory_limit = c.resources.limits["memory"]
                     node_resources[node_name]['memory_limits'] = round(
-                        node_resources[node_name]['memory_limits'] + memory_unit_tog(memory_limit), 2)
+                        node_resources[node_name]['memory_limits'] + int(memory_unit_tog(memory_limit)), 2)
         node_resources[node_name]['pods_number'] += 1
 
     if n_name is None:
