@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.shortcuts import redirect
+from django.core.cache import cache
 
 from kubernetes import client, config
 
@@ -21,8 +22,13 @@ def load_auth(auth_type=None, token=None, **kwargs):
         client.Configuration.set_default(configuration)
 
     elif auth_type == 'kube_config':
-        file_path = Path('kube_config', token)
-        config.load_kube_config(r'%s' % file_path)
+        """
+        弃用的认证方式
+        # file_path = Path('kube_config', token)
+        # config.load_kube_config(r'%s' % file_path)
+        """
+        kube_yaml = cache.get(token)
+        config.load_kube_config_from_dict(kube_yaml)
 
 
 def auth_check(auth_type, token):

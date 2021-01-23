@@ -1,10 +1,11 @@
+import yaml
+
 from django.shortcuts import render, redirect
 from django.views.generic import View
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.clickjacking import xframe_options_sameorigin
-
-from pathlib import Path
+from django.core.cache import cache
 
 from kubernetes import client
 
@@ -30,18 +31,29 @@ class LogIn(View):
             import random
             import hashlib
             random_str = hashlib.md5(str(random.random()).encode()).hexdigest()
-            file_path = Path('kube_config', random_str)
+            """
+            弃用的kube_config保存，使用缓存来存储数据
+            # file_path = Path('kube_config', random_str)
+            # file_obj = request.FILES.get("file")
+            # try:
+            #     with open(file_path, 'w', encoding='utf8') as f:
+            #         date = file_obj.read().decode()
+            #         f.write(date)
+            # except FileNotFoundError:
+            #     import os
+            #     os.mkdir('kube_config')
+            #     return JsonResponse({'code': 1, 'msg': '请刷新后重试！'})
+            # except Exception as e:
+            #     return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
+            """
             file_obj = request.FILES.get("file")
             try:
-                with open(file_path, 'w', encoding='utf8') as f:
-                    date = file_obj.read().decode()
-                    f.write(date)
-            except FileNotFoundError:
-                import os
-                os.mkdir('kube_config')
-                return JsonResponse({'code': 1, 'msg': '请刷新后重试！'})
+                context = file_obj.read().decode()
+                context = yaml.load(context, Loader=yaml.FullLoader)
             except Exception as e:
                 return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
+            else:
+                cache.set(random_str, context, timeout=300)
             result = k8s.auth_check(auth_type='kube_config', token=random_str)
             if result.get('code') == 0:
                 request.session['is_login'] = True
