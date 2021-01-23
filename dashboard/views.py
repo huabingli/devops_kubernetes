@@ -54,7 +54,9 @@ class LogIn(View):
             except Exception as e:
                 return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
             else:
-                cache.set(random_str, context, timeout=86400)
+                '把config配置文件放到缓存中使用'
+                timeout = request.session.get_expiry_age()
+                cache.set(random_str, context, timeout=timeout)
                 result = k8s.auth_check(auth_type='kube_config', token=random_str)
             if result.get('code') == 0:
                 request.session['is_login'] = True

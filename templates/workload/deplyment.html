@@ -34,6 +34,8 @@ Deployments
 
     <script type="text/html" id="barDemo">
       <a class="layui-btn layui-btn-xs" lay-event="yaml">yaml</a>
+      <a class="layui-btn layui-btn-xs" lay-event="details">详情</a>
+      <a class="layui-btn layui-btn-xs" lay-event="scale">扩容/缩容</a>
       <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </script>
 {% endblock %}
@@ -64,7 +66,7 @@ layui.use('table', function(){
       ,{field:'selector', title:'Pod标签选择器',sort: true, align: 'center', templet: labelsFormat}
       ,{field:'images', title:'镜像/状态',sort: true, align: 'center'}
       ,{field:'create_time', title:'创建时间',sort: true, align: 'center'}
-      ,{title:'操作', toolbar: '#barDemo', align: 'center'}
+      ,{title:'操作', toolbar: '#barDemo', align: 'center', width:250}
     ]]
     ,page: true
     ,id: 'dptb'
@@ -73,7 +75,7 @@ layui.use('table', function(){
 
   //监听行工具事件
   table.on('tool(nstable)', function(obj) {
-      var data = obj.data;
+      let data = obj.data;
       //console.log(obj)
       if (obj.event === 'del') {
           layer.confirm('真的删除'+data['name'] + '这个Deployment吗?', function (index) {
@@ -98,13 +100,41 @@ layui.use('table', function(){
               })
           });
       } else if (obj.event === 'yaml') {
-            let data = obj.data
             layer.open({
                 title: 'YAML'
                 ,type: 2
                 ,area: ['70%', '80%'],
                 content: "{% url 'ace_editor' %}?resource=deployment&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
             })
+      } else if (obj.event === 'scale') {
+          layer.prompt({
+              formType: 0
+              ,title: '扩容/缩容'
+              ,value: data.replicas
+          }, function (value, index) {
+              data['replicas'] = value
+              $.ajax({
+                url: '{% url "deployment_api" %}'
+                ,type: 'PUT'
+                ,data: data
+                ,headers:{'X-CSRFToken': "{{ csrf_token }}"}
+                ,success: function (result) {
+                    if (result.code === 0){
+                        layer.msg(result.msg, {icon: 6})
+                        obj.update({
+                            replicas: value
+                        })
+
+                    }else {
+                        layer.msg(result.msg, {icon: 5})
+                    }
+                }
+                ,error: function () {
+                    layer.msg('服务器接口异常', {icon: 5})
+                }
+            })
+              layer.close(index)
+          })
       }
   })
     // 监听搜索ID事件

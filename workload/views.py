@@ -68,6 +68,7 @@ class DeploymentApiView(View):
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
+    @method_decorator(k8s.self_login_request)
     def delete(self, request):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
@@ -86,6 +87,7 @@ class DeploymentApiView(View):
         result = {'code': code, 'msg': msg}
         return JsonResponse(result)
 
+    @method_decorator(k8s.self_login_request)
     def post(self, request):
         k8s.load_auth(request=self.request)
         apps_api = client.AppsV1Api()
@@ -98,7 +100,6 @@ class DeploymentApiView(View):
             labels = dict()
             for p in data.get('labels', None).split(','):
                 c = p.split('=')
-                print(c)
                 if not len(c) == 2:
                     raise IndexError('标签格式错误')
                 k, v = c[0], c[1]
@@ -176,6 +177,54 @@ class DeploymentApiView(View):
         result = {'code': code, 'msg': msg}
         return JsonResponse(result)
 
+    @method_decorator(k8s.self_login_request)
+    def put(self, request):
+        request_data = QueryDict(self.request.body)
+        name = request_data.get('name', None)
+        namespace = request_data.get('namespace', None)
+        replicas = request_data.get('replicas')
+        k8s.load_auth(request=self.request)
+        apps_api = client.AppsV1Api()
+        try:
+            body = apps_api.read_namespaced_deployment(name=name, namespace=namespace)
+            current_replicas = body.spec.replicas
+            min_replicas = 0
+            max_replicas = 10
+            try:
+                replicas = int(replicas)
+            except ValueError:
+                raise client.exceptions.ApiException(reason='输入格式错误，请输入数字！')
+            msg = ''
+            if current_replicas < replicas < max_replicas:
+                msg = '扩容成功'
+            elif current_replicas > replicas > min_replicas:
+                msg = '缩容成功'
+            elif replicas == current_replicas:
+                msg = '副本数一致'
+                raise client.exceptions.ApiException(reason=msg)
+            elif replicas > max_replicas:
+                msg = '副本数设置过大！请联系管理员操作'
+                raise client.exceptions.ApiException(reason=msg)
+            elif replicas == min_replicas:
+                msg = '副本数不能设置为0！'
+                raise client.exceptions.ApiException(reason=msg)
+            body.spec.replicas = replicas
+            apps_api.patch_namespaced_deployment(name=name, namespace=namespace, body=body)
+            code = 0
+        except client.exceptions.ApiException as e:
+            code = e.status
+            if e.status == 403:
+                msg = '没有创建权限！'
+            elif e.status == 409:
+                msg = 'Deployment已经存在！'
+            elif e.status == 422:
+                msg = f'reason:"{e.reason}"<br>message:{json.loads(e.body).get("message")}'
+            else:
+                print(e)
+                msg = e.reason
+        result = {'code': code, 'msg': msg}
+        return JsonResponse(result)
+
 
 class DaemonSetsApiView(View):
     @method_decorator(k8s.self_login_request)
@@ -223,6 +272,7 @@ class DaemonSetsApiView(View):
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
+    @method_decorator(k8s.self_login_request)
     def delete(self, request):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
@@ -325,6 +375,7 @@ class PodsApiView(View):
             result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
+    @method_decorator(k8s.self_login_request)
     def delete(self, request):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
@@ -392,6 +443,7 @@ class StatefulSetApiView(View):
         result = {'code': code, 'msg': msg, 'count': count, 'data': data}
         return JsonResponse(result)
 
+    @method_decorator(k8s.self_login_request)
     def delete(self, request):
         request_data = QueryDict(self.request.body)
         name = request_data.get('name')
