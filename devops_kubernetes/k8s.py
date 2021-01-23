@@ -9,8 +9,8 @@ from pathlib import Path
 
 # k8s认证
 def load_auth(auth_type=None, token=None, **kwargs):
-    request = kwargs.get('request', None)
     if not auth_type and not token:
+        request = kwargs.get('request', None)
         auth_type = request.session.get('auth_type')
         token = request.session.get('token')
     if auth_type == 'token':
@@ -27,15 +27,12 @@ def load_auth(auth_type=None, token=None, **kwargs):
         # file_path = Path('kube_config', token)
         # config.load_kube_config(r'%s' % file_path)
         """
-        sentinel = object()
-        kube_yaml = cache.get(token) is sentinel
-        if kube_yaml:
-            config.load_kube_config_from_dict(kube_yaml)
+        kube_yaml = cache.get(token)
+        config.load_kube_config_from_dict(kube_yaml)
 
 
-def auth_check(auth_type, token, **kwargs):
-    request = kwargs.get('request', None)
-    load_auth(auth_type, token, request=request)
+def auth_check(auth_type, token):
+    load_auth(auth_type, token)
     try:
         core_api = client.CoreApi()
         core_api.get_api_versions()
@@ -58,7 +55,19 @@ def auth_check(auth_type, token, **kwargs):
 def self_login_request(func):
     def inner(request, *args, **kwargs):
         is_login = request.session.get('is_login', False)
-        if is_login:
+        token = request.session.get('token')
+        auth_type = request.session.get('auth_type', None)
+        if auth_type == 'kube_config':
+            kube_yaml = True if cache.get(token, False) else False
+        else:
+            kube_yaml = True
+        # 设置cache中config配置文件的过期时间
+        if kube_yaml:
+            # 获取session过期时间
+            time = request.session.get_expiry_age()
+            # 更新cache过期时间
+            cache.touch(token, time)
+        if is_login and kube_yaml:
             return func(request, *args, **kwargs)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))

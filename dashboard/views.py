@@ -31,6 +31,7 @@ class LogIn(View):
             import random
             import hashlib
             random_str = hashlib.md5(str(random.random()).encode()).hexdigest()
+            random_str = f'kube_config.{random_str}'
             """
             弃用的kube_config保存，使用缓存来存储数据
             # file_path = Path('kube_config', random_str)
@@ -54,7 +55,7 @@ class LogIn(View):
                 return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
             else:
                 cache.set(random_str, context, timeout=86400)
-            result = k8s.auth_check(auth_type='kube_config', token=random_str, request=self.request)
+                result = k8s.auth_check(auth_type='kube_config', token=random_str)
             if result.get('code') == 0:
                 request.session['is_login'] = True
                 request.session['auth_type'] = 'kube_config'
