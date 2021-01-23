@@ -53,8 +53,8 @@ class LogIn(View):
             except Exception as e:
                 return JsonResponse({'code': 1, 'msg': '文件类型错误！', 'except': '{}'.format(e)})
             else:
-                cache.set(random_str, context, timeout=300)
-            result = k8s.auth_check(auth_type='kube_config', token=random_str)
+                cache.set(random_str, context, timeout=86400)
+            result = k8s.auth_check(auth_type='kube_config', token=random_str, request=self.request)
             if result.get('code') == 0:
                 request.session['is_login'] = True
                 request.session['auth_type'] = 'kube_config'

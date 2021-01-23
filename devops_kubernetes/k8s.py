@@ -9,8 +9,8 @@ from pathlib import Path
 
 # k8s认证
 def load_auth(auth_type=None, token=None, **kwargs):
+    request = kwargs.get('request', None)
     if not auth_type and not token:
-        request = kwargs.get('request', None)
         auth_type = request.session.get('auth_type')
         token = request.session.get('token')
     if auth_type == 'token':
@@ -27,12 +27,15 @@ def load_auth(auth_type=None, token=None, **kwargs):
         # file_path = Path('kube_config', token)
         # config.load_kube_config(r'%s' % file_path)
         """
-        kube_yaml = cache.get(token)
-        config.load_kube_config_from_dict(kube_yaml)
+        sentinel = object()
+        kube_yaml = cache.get(token) is sentinel
+        if kube_yaml:
+            config.load_kube_config_from_dict(kube_yaml)
 
 
-def auth_check(auth_type, token):
-    load_auth(auth_type, token)
+def auth_check(auth_type, token, **kwargs):
+    request = kwargs.get('request', None)
+    load_auth(auth_type, token, request=request)
     try:
         core_api = client.CoreApi()
         core_api.get_api_versions()
