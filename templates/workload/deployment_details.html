@@ -6,7 +6,7 @@
     <span class="layui-breadcrumb">
       <a href="#">首页</a>
       <a href="#">工作负载</a>
-      <a href="#">Deployments</a>
+      <a href="{% url 'deployment' %}">Deployments</a>
       <a><cite>详情页</cite></a>
     </span>
     <hr>
@@ -518,7 +518,7 @@ layui.use('table', function(){
         ,page: false  // 关闭分页
         ,cols: [[
           {field: 'name', title: '名称', sort: true}
-          {#,{field: 'namespace', title: '命名空间', sort: true}#}
+          ,{field: 'namespace', title: '命名空间', sort: true}
           ,{field: 'replicas', title: '期望', sort: true}
           ,{field: 'ready_replicas', title: '就绪'}
           ,{field: 'available_replicas', title: '可用',sort: true}

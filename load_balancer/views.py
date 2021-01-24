@@ -21,7 +21,7 @@ class ServicesApiView(View):
                 name = svc.metadata.name
                 namespace = svc.metadata.namespace
                 labels = svc.metadata.labels
-                type = svc.spec.type
+                types = svc.spec.type
                 cluster_ip = svc.spec.cluster_ip
                 ports = []
                 for p in svc.spec.ports:  # 不是序列，不能直接返回
@@ -47,7 +47,7 @@ class ServicesApiView(View):
                     else:
                         endpoint = "已关联"
 
-                svc = {"name": name, "namespace": namespace, "type": type,
+                svc = {"name": name, "namespace": namespace, "type": types,
                        "cluster_ip": cluster_ip, "ports": ports, "labels": labels,
                        "selector": selector, "endpoint": endpoint, "create_time": create_time}
                 if search_key:
@@ -135,6 +135,8 @@ class IngressApiView(View):
                     data.append(ing)
             code, msg = 0, '数据返回成功！'
         except client.exceptions.ApiValueError as e:
+            code, msg = 1, '{}'.format(e)
+        except ValueError as e:
             code, msg = 1, '{}'.format(e)
         except client.exceptions.ApiException as e:
             code = 1
