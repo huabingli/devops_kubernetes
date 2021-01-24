@@ -3,6 +3,8 @@ import json
 from django.views.generic import View
 from django.http import JsonResponse, QueryDict
 from django.utils.decorators import method_decorator
+from django.shortcuts import render, redirect
+
 
 from kubernetes import client
 
@@ -223,6 +225,167 @@ class DeploymentApiView(View):
                 print(e)
                 msg = e.reason
         result = {'code': code, 'msg': msg}
+        return JsonResponse(result)
+
+
+class DeploymentDetailsView(View):
+
+    def get(self, request):
+        namespace = self.request.GET.get('namespace', None)
+        dp_name = self.request.GET.get('name', None)
+        if not namespace or not dp_name:
+            return redirect('deployment')
+        k8s.load_auth(request=self.request)
+        core_api = client.CoreV1Api()
+        apps_api = client.AppsV1Api()
+        networking_api = client.NetworkingV1beta1Api()
+
+        dp_info = list()
+        for dp in apps_api.list_namespaced_deployment(namespace=namespace).items:
+            if dp_name == dp.metadata.name:
+                name = dp.metadata.name
+                namespace = dp.metadata.namespace
+                replicas = dp.spec.replicas
+                available_replicas = (
+                    0 if dp.status.available_replicas is None else dp.status.available_replicas
+                )
+                labels = dp.metadata.labels
+                selector = dp.spec.selector.match_labels
+
+                # 通过deployment反向查询对应service
+                service = list()
+                svc_name = None
+                for svc in core_api.list_namespaced_service(namespace=namespace).items:
+                    if svc.spec.selector == selector:
+                        svc_name = svc.metadata.name
+                        svc_type = svc.spec.type
+                        cluster_ip = svc.spec.cluster_ip
+                        ports = svc.spec.ports
+
+                        service.append({'type': svc_type, 'cluster_ip': cluster_ip, 'ports': ports})
+                # service没有创建，ingress也没有
+                ingress = {'rules': None, 'tls': None}
+                for ing in networking_api.list_namespaced_ingress(namespace=namespace).items:
+                    for r in ing.spec.rules:
+                        for b in r.http.paths:
+                            if b.backend.service_name == svc_name:
+                                ingress['rules'] = ing.spec.rules
+                                ingress['tls'] = ing.spec.tls
+
+                containers = list()
+                for c in dp.spec.template.spec.containers:
+                    c_name = c.name
+                    image = c.image
+                    liveness_probe = c.liveness_probe
+                    readiness_probe = c.readiness_probe
+                    resources = c.resources  # 在前端处理
+                    env = c.env
+                    ports = c.ports
+                    volume_mounts = c.volume_mounts
+                    args = c.args
+                    command = c.command
+
+                    container = {"name": c_name, "image": image, "liveness_probe": liveness_probe,
+                                 "readiness_probe": readiness_probe,
+                                 "resources": resources, "env": env, "ports": ports,
+                                 "volume_mounts": volume_mounts, "args": args, "command": command}
+                    containers.append(container)
+
+                tolerations = dp.spec.template.spec.tolerations
+                rolling_update = dp.spec.strategy.rolling_update
+                volumes = []
+                if dp.spec.template.spec.volumes is not None:
+                    for v in dp.spec.template.spec.volumes:
+                        volume = {}
+                        if v.config_map is not None:
+                            volume["config_map"] = v.config_map
+                        elif v.secret is not None:
+                            volume["secret"] = v.secret
+                        elif v.empty_dir is not None:
+                            volume["empty_dir"] = v.empty_dir
+                        elif v.host_path is not None:
+                            volume["host_path"] = v.host_path
+                        elif v.config_map is not None:
+                            volume["downward_api"] = v.downward_api
+                        elif v.config_map is not None:
+                            volume["glusterfs"] = v.glusterfs
+                        elif v.cephfs is not None:
+                            volume["cephfs"] = v.cephfs
+                        elif v.rbd is not None:
+                            volume["rbd"] = v.rbd
+                        elif v.persistent_volume_claim is not None:
+                            volume["persistent_volume_claim"] = v.persistent_volume_claim
+                        else:
+                            volume["unknown"] = "unknown"
+                        volumes.append(volume)
+
+                rs_number = dp.spec.revision_history_limit
+                create_time = k8s.dt_format(dp.metadata.creation_timestamp)
+
+                dp_info = {"name": name, "namespace": namespace, "replicas": replicas,
+                           "available_replicas": available_replicas, "labels": labels,
+                           "selector": selector, "containers": containers, "rs_number": rs_number,
+                           "rolling_update": rolling_update, "create_time": create_time, "volumes": volumes,
+                           "tolerations": tolerations, "service": service, "ingress": ingress}
+        result = {'dp_name': dp_name, 'namespace': namespace, 'dp_info': dp_info}
+        return render(request, 'workload/deployment_details.html', result)
+
+
+class ReplicasetApiView(View):
+
+    @method_decorator(k8s.self_login_request)
+    def get(self, request):
+        k8s.load_auth(request=self.request)
+        apps_api = client.AppsV1Api()
+        dp_name = request.GET.get('name', None)
+        namespace = request.GET.get('namespace', None)
+        data = list()
+        for rs in apps_api.list_namespaced_replica_set(namespace=namespace).items:
+            current_dp_name = rs.metadata.owner_references[0].name
+            rs_name = rs.metadata.name
+            if dp_name == current_dp_name:
+                namespace = rs.metadata.namespace
+                replicas = rs.status.replicas
+                available_replicas = rs.status.available_replicas
+                ready_replicas = rs.status.ready_replicas
+                revision = rs.metadata.annotations["deployment.kubernetes.io/revision"]
+                create_time = k8s.dt_format(rs.metadata.creation_timestamp)
+
+                containers = {}
+                for c in rs.spec.template.spec.containers:
+                    containers[c.name] = c.image
+
+                rs = dict(
+                    name=rs_name, namespace=namespace, replicas=replicas, available_replicas=available_replicas,
+                    ready_replicas=ready_replicas, revision=revision, containers=containers, create_time=create_time
+                )
+                data.append(rs)
+        count = len(data)
+        result = dict(code=0, msg='', count=count, data=data)
+        return JsonResponse(result)
+
+    @method_decorator(k8s.self_login_request)
+    def post(self, request):
+        k8s.load_auth(request=self.request)
+        apps_beta_api = client.ExtensionsV1beta1Api()
+        dp_name = request.POST.get('dn_name', None)
+        namespace = request.POST.get('namespace', None)
+        reversion = request.POST.get('reversion', None)
+        body = dict(name=dp_name, rollback_to=dict(reversion=reversion))
+        try:
+            apps_beta_api.create_namespaced_deployment_rollback(name=dp_name, namespace=namespace, body=body)
+        except client.exceptions.ApiException as e:
+            code = e.status
+            if e.status == 403:
+                msg = '没有回滚权限！'
+            elif e.status == 422:
+                e = json.loads(e.body)
+                msg = e.get('message')
+            else:
+                msg = f'{e.reason}'
+        else:
+            code, msg = 0, '回滚成功'
+        result = dict(code=code, msg=msg)
         return JsonResponse(result)
 
 

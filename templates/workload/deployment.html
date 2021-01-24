@@ -135,6 +135,8 @@ layui.use('table', function(){
             })
               layer.close(index)
           })
+      } else if (obj.event === 'details') {
+          window.location.href = '{% url "deployment_details" %}?namespace=' + data['namespace'] + '&name=' + data['name']
       }
   })
     // 监听搜索ID事件

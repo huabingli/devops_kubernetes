@@ -5,10 +5,20 @@ from devops_kubernetes.k8s import self_login_request
 from workload import views
 urlpatterns = [
     path('deployment/', self_login_request(
-        TemplateView.as_view(template_name='workload/deplyment.html')), name='deployment'),
+        TemplateView.as_view(template_name='workload/deployment.html')), name='deployment'),
     path('deployment_create/',
-         self_login_request(TemplateView.as_view(template_name='workload/deplyment_create.html')),
+         self_login_request(TemplateView.as_view(template_name='workload/deployment_create.html')),
          name='deployment_create'),
+    path(
+        'deployment_details/',
+        self_login_request(views.DeploymentDetailsView.as_view()),
+        name='deployment_details'
+         ),
+    path(
+        'replicaset_api',
+        views.ReplicasetApiView.as_view(),
+        name='replicaset_api'
+    ),
     path('daemonsets/', self_login_request(
         TemplateView.as_view(template_name='workload/daemonsets.html')), name='daemonsets'),
     path('pods/', self_login_request(TemplateView.as_view(template_name='workload/pods.html')), name='pods'),

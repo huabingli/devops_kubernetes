@@ -87,7 +87,7 @@ class NamespaceApiView(View):
         return JsonResponse(result)
 
 
-class NodeDetailsApiView(View):
+class NodeDetailsView(View):
     @method_decorator(k8s.self_login_request)
     def get(self, request):
         k8s.load_auth(request=self.request)
@@ -96,7 +96,8 @@ class NodeDetailsApiView(View):
         node_name = self.request.GET.get('node_name', None)
         n_r = node_data.node_resource(core_api, node_name)
         n_i = node_data.node_info(core_api, node_name)
-        return render(request, 'kube/node_details.html', {'node_name': node_name, 'node_resouces': n_r, 'node_info': n_i})
+        result = {'node_name': node_name, 'node_resouces': n_r, 'node_info': n_i}
+        return render(request, 'kube/node_details.html', result)
 
 
 class NodesApiView(View):
@@ -133,7 +134,7 @@ class NodesApiView(View):
                 msg = '没有访问权限！，默认使用default空间'
             else:
                 msg = '获取数据失败！'
-            result = {'code': code, 'msg': msg,}
+            result = {'code': code, 'msg': msg}
         else:
             code, msg = 0, '数据返回成功！'
             count = len(data)
