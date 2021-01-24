@@ -9,6 +9,7 @@ from django.core.cache import cache
 
 from kubernetes import client
 
+
 from devops_kubernetes import k8s
 
 
@@ -20,18 +21,21 @@ class LogIn(View):
         return render(request, self.template_name)
 
     def post(self, request, *args, **kwargs):
+        import random
+        import hashlib
         token = self.request.POST.get('token', None)
+        random_str = hashlib.md5(str(random.random()).encode()).hexdigest()
+        random_str = f'k8s_token{random_str}'
+
         if token:
-            result = k8s.auth_check(token=token, auth_type='token')
+            timeout = request.session.get_expiry_age()
+            cache.set(random_str, token, timeout=timeout)
+            result = k8s.auth_check(token=random_str, auth_type='token')
             if result.get('code') == 0:
                 request.session['is_login'] = True
                 request.session['auth_type'] = 'token'
-                request.session['token'] = token
+                request.session['token'] = random_str
         else:
-            import random
-            import hashlib
-            random_str = hashlib.md5(str(random.random()).encode()).hexdigest()
-            random_str = f'kube_config.{random_str}'
             """
             弃用的kube_config保存，使用缓存来存储数据
             # file_path = Path('kube_config', random_str)

@@ -14,6 +14,7 @@ def load_auth(auth_type=None, token=None, **kwargs):
         auth_type = request.session.get('auth_type')
         token = request.session.get('token')
     if auth_type == 'token':
+        token = cache.get(token)
         configuration = client.Configuration()
         configuration.host = 'https://192.168.35.61:6443'
         configuration.ssl_ca_cert = Path(settings.BASE_DIR, 'static', 'ca.crt')
@@ -55,19 +56,15 @@ def auth_check(auth_type, token):
 def self_login_request(func):
     def inner(request, *args, **kwargs):
         is_login = request.session.get('is_login', False)
-        token = request.session.get('token')
-        auth_type = request.session.get('auth_type', None)
-        if auth_type == 'kube_config':
-            kube_yaml = True if cache.get(token, False) else False
-        else:
-            kube_yaml = True
+        random_str_token = request.session.get('token', 'None')
+        token = True if cache.get(random_str_token, False) else False
         # 设置cache中config配置文件的过期时间
-        if kube_yaml:
+        if token:
             # 获取session过期时间
             time = request.session.get_expiry_age()
             # 更新cache过期时间
-            cache.touch(token, time)
-        if is_login and kube_yaml:
+            cache.touch(random_str_token, time)
+        if is_login and token:
             return func(request, *args, **kwargs)
         else:
             return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
