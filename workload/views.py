@@ -475,7 +475,8 @@ class PodsLogView(View):
         namespace = request.POST.get("namespace", None)
         container = request.POST.get('container')
         try:
-            log_text = core_api.read_namespaced_pod_log(name=name, namespace=namespace, container=container, tail_lines=500)
+            log_text = core_api.read_namespaced_pod_log(name=name, namespace=namespace, container=container,
+                                                        tail_lines=500)
         except client.exceptions.ApiException as e:
             code = e.status
             if e.status == 403:
@@ -664,3 +665,19 @@ class StatefulSetApiView(View):
                 msg = '删除失败！'
         result = {'code': code, 'msg': msg}
         return JsonResponse(result)
+
+
+class TerminalView(View):
+    decorators = [k8s.self_login_request, xframe_options_sameorigin]
+
+    @method_decorator(decorators)
+    def get(self, request):
+        namespace = request.GET.get("namespace")
+        pod_name = request.GET.get("pod_name")
+        containers = request.GET.get("containers").split(',')  # 返回 nginx1,nginx2，转成一个列表方便前端处理
+        # 认证类型和token，用于传递到websocket，websocket根据sessionid获取token，让websocket处理连接k8s认证用
+        auth_type = request.session.get('auth_type')
+        token = request.session.get('token')
+        connect = {'namespace': namespace, 'pod_name': pod_name, 'containers': containers, 'auth_type': auth_type,
+                   'token': token}
+        return render(self.request, 'workload/terminal.html', {'connect': connect})

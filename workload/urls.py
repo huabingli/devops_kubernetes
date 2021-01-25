@@ -28,5 +28,6 @@ urlpatterns = [
     path('deployment_api/', views.DeploymentApiView.as_view(), name='deployment_api'),
     path('daemonsets_api/', views.DaemonSetsApiView.as_view(), name='daemonsets_api'),
     path('pods_api/', views.PodsApiView.as_view(), name='pods_api'),
-    path('statefulset_api/', views.StatefulSetApiView.as_view(), name='statefulset_api')
+    path('statefulset_api/', views.StatefulSetApiView.as_view(), name='statefulset_api'),
+    path('terminal/', views.TerminalView.as_view(), name='terminal')
 ]

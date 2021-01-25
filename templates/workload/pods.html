@@ -34,6 +34,7 @@
     <script type="text/html" id="barDemo">
       <a class="layui-btn layui-btn-xs" lay-event="yaml">yaml</a>
       <a class="layui-btn layui-btn-xs" lay-event="log">查看日志</a>
+      <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="terminal" style="color: #FFF;background-color: #385985">终端</a>
       <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </script>
 {% endblock %}
@@ -64,7 +65,7 @@ layui.use(['table', 'form'], function(){
       ,{field:'containers', title:'容器组',sort: true, align: 'center', templet: containersFormat}
       ,{field:'status', title:'镜像名称/状态',sort: true, align: 'center', templet: statusFormat}
       ,{field:'create_time', title:'创建时间',sort: true, align: 'center'}
-      ,{title:'操作', toolbar: '#barDemo', align: 'center'}
+      ,{title:'操作', toolbar: '#barDemo', align: 'center', width: 250}
     ]]
     ,page: true
     ,id: 'potb'
@@ -133,9 +134,9 @@ layui.use(['table', 'form'], function(){
                 content: "{% url 'ace_editor' %}?resource=pod&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
             })
       } else if (obj.event === 'log') {
-          let datalog = {}
-          cs = data['containers'];
-          containers = "";
+
+          let cs = data['containers'];
+          let containers = "";
           for(let c in cs) {
             if (c < cs.length-1) {
                 containers += cs[c]['c_name'] + ","
@@ -150,6 +151,23 @@ layui.use(['table', 'form'], function(){
             content: '{% url "pods_log" %}?namespace=' + data["namespace"] + "&pod_name=" + data["name"] + "&containers=" + containers,
         });
 
+      } else if (obj.event === 'terminal') {
+                // 逗号拼接容器名, 例如containers=c1,c2
+        let cs = data['containers'];
+        let containers = "";
+        for(let c in cs) {
+            if (c < cs.length-1) {
+                containers += cs[c]['c_name'] + ","
+            } else {
+                containers += cs[c]['c_name']
+            }
+        }
+        layer.open({
+            title: "容器终端",
+            type: 2,  // 加载层，从另一个网址引用
+            area : [ '50%', '60%' ],
+            content: '{% url "terminal" %}?namespace=' + data["namespace"] + "&pod_name=" + data["name"] + "&containers=" + containers,
+        });
       }
   })
     // 监听搜索ID事件

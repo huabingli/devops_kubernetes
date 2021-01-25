@@ -7,14 +7,14 @@
 
 </head>
 {% csrf_token %}
-
+<body>
 <div class="layui-row layui-col-space12">
 
         <div class="layui-col-md12">
             <form action="" class="layui-form">
             <div class="layui-form-item">
                 <label for="" class="layui-form-label">容器：</label>
-                <div class="layui-input-inline layui-form-select">
+                <div class="layui-input-inline layui-form-select ">
                     <select name="namespace" lay-verify="required" id="ns" lay-filter="ns">
                         {% for c in containers %}
                             <option value="{{ c }}">{{ c }}</option>

@@ -42,8 +42,10 @@ INSTALLED_APPS = [
     'load_balancer',
     'storage',
     'workload',
+    'channels'
 
 ]
+ASGI_APPLICATION = 'devops_kubernetes.routing.application'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
