@@ -3,7 +3,7 @@
 {% block nav-item-2 %}layui-nav-itemed{% endblock %}
 {% block nav-this-2-4 %}layui-this{% endblock %}
 
-{% block title %}DaemonSets{% endblock %}
+{% block title %}Pods{% endblock %}
 
 
 {% block content %}
@@ -11,8 +11,13 @@
     <span class="layui-breadcrumb">
       <a href="/">首页</a>
       <a href="#">工作负载</a>
-      <a><cite>DaemonSets</cite></a>
+      <a><cite>Pods</cite></a>
     </span>
+    <div  id="modal"  style="display: none">
+    <form class="layui-form " action="" >
+        <div id="log-text" class="layui-form-item" style="background-color: black;color: white;padding: 10px;font-size: 16px"></div>
+    </form>
+    </div>
     <script type="text/html" id="toolbarDemo">
             <div class="demoTable">
               <button class="layui-btn layui-btn-sm" lay-event="addData">创建</button>
@@ -28,6 +33,7 @@
 
     <script type="text/html" id="barDemo">
       <a class="layui-btn layui-btn-xs" lay-event="yaml">yaml</a>
+      <a class="layui-btn layui-btn-xs" lay-event="log">查看日志</a>
       <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
     </script>
 {% endblock %}
@@ -35,8 +41,9 @@
 {% block js %}
 <script>
 
-layui.use('table', function(){
+layui.use(['table', 'form'], function(){
   var table = layui.table;
+  var form = layui.form;
   var $ = layui.jquery
 
   table.render({
@@ -80,7 +87,7 @@ layui.use('table', function(){
     // 如果status为None，使用容器状态显示
     function statusFormat(d){
         let result = ''
-        if(d.status == "None"){
+        if(d.status === "None"){
             for(let key in d.containers) {
                 let data = d.containers[key]
                 result += key + '：' + data.c_image + '/' + data.c_status + '<br>'
@@ -125,6 +132,35 @@ layui.use('table', function(){
                 ,area: ['70%', '80%'],
                 content: "{% url 'ace_editor' %}?resource=pod&" + 'namespace=' + data['namespace'] + '&name=' + data['name']
             })
+      } else if (obj.event === 'log') {
+          let datalog = {}
+          datalog['name'] = data['name']
+          datalog['namespace'] = data['namespace']
+          $.ajax({
+              url: '{% url 'pods_log' %}'
+              ,type: 'POST'
+              ,headers:{'X-CSRFToken': "{{ csrf_token }}"}
+              ,async: false
+              ,data: datalog
+              ,success: function (result) {
+                  if(result.code === 0){
+                    $('#log-text').html("<pre>" + result.data + "</pre>");
+                   } else {
+                       $('#log-text').html("<pre>" + result.msg + "</pre>");
+                   }
+                  }
+              ,error: function (){
+                  layer.msg('服务器接口异常', {icon: 5})
+              }
+
+          })
+          layer.open({
+              title: "容器日志 "+ data["name"],
+              type:1,
+              area : [ '60%', '70%' ],
+              closeBtn: 1, // 关闭按钮
+              content: $("#modal").html()   // form div
+          })
       }
   })
     // 监听搜索ID事件

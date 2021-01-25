@@ -455,6 +455,43 @@ class DaemonSetsApiView(View):
         return JsonResponse(result)
 
 
+class PodsLogView(View):
+
+    @method_decorator(k8s.self_login_request)
+    def get(self, request):
+        namespace = request.GET.get("namespace")
+        pod_name = request.GET.get("pod_name")
+        containers = request.GET.get("containers").split(',')  # 返回 nginx1,nginx2，转成一个列表方便前端处理
+        connect = {'namespace': namespace, 'pod_name': pod_name, 'containers': containers}
+        return render(self.request, 'workload/pods_log.html', connect)
+
+    @method_decorator(k8s.self_login_request)
+    def post(self, request):
+        k8s.load_auth(request=self.request)
+        core_api = client.CoreV1Api()
+        name = request.POST.get("name", None)
+        namespace = request.POST.get("namespace", None)
+        try:
+            log_text = core_api.read_namespaced_pod_log(name=name, namespace=namespace, container=None, tail_lines=500)
+        except client.exceptions.ApiException as e:
+            code = e.status
+            if e.status == 403:
+                msg = '你没有查看日志权限'
+            else:
+                msg = f'获取日志失败<br>{e}'
+
+            result = {'code': code, 'msg': msg}
+        else:
+            code = 0
+            if len(log_text) == 0:
+                msg = "没有日志！"
+                log_text = "没有日志！"
+            else:
+                msg = "获取日志成功！"
+            result = {'code': code, 'msg': msg, 'data': log_text}
+        return JsonResponse(result)
+
+
 class PodsApiView(View):
     @method_decorator(k8s.self_login_request)
     def get(self, request):

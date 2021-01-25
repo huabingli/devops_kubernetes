@@ -22,6 +22,7 @@ urlpatterns = [
     path('daemonsets/', self_login_request(
         TemplateView.as_view(template_name='workload/daemonsets.html')), name='daemonsets'),
     path('pods/', self_login_request(TemplateView.as_view(template_name='workload/pods.html')), name='pods'),
+    path('pods_log/', self_login_request(views.PodsLogView.as_view()), name='pods_log'),
     path('statefulset/', self_login_request(TemplateView.as_view(template_name='workload/statefulset.html')),
          name='statefulset'),
     path('deployment_api/', views.DeploymentApiView.as_view(), name='deployment_api'),

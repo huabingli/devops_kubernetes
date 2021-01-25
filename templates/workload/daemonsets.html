@@ -77,7 +77,6 @@ layui.use('table', function(){
     function containersFormat(d) {
         let result =  ''
         for (let key in d.containers) {
-            console.log(key, d.containers)
             result += key + '=' + d.containers[key] + '<br>'
         }
         return result
