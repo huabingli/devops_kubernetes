@@ -45,7 +45,6 @@
             ,type: 'GET'
             ,success: function (result) {
                 if (result.code === 0) {
-                    console.log(result)
                     editor.setValue(result.data)
                 } else {
                     layer.msg(result.msg, {icon: 5})

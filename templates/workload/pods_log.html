@@ -3,14 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <title>容器日志</title>
-</head>
-<body>
+    <link href="/static/layui/css/layui.css" rel="stylesheet" type="text/css"/>
 
-<div id="log-text" class="layui-form-item" style="background-color: black;color: white;padding: 10px;font-size: 16px"></div>
+</head>
+{% csrf_token %}
+
+<div class="layui-row layui-col-space12">
+
+        <div class="layui-col-md12">
+            <form action="" class="layui-form">
+            <div class="layui-form-item">
+                <label for="" class="layui-form-label">容器：</label>
+                <div class="layui-input-inline layui-form-select">
+                    <select name="namespace" lay-verify="required" id="ns" lay-filter="ns">
+                        {% for c in containers %}
+                            <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </form>
+        </div>
+
+
+
+
+  <div class="layui-col-md12">
+        <div id="log-text" class="layui-form-item" style="background-color: black;color: white;padding: 10px;font-size: 16px"></div>
+  </div>
+</div>
+
+
+<script src="/static/layui/layui.js"></script>
 
 <script>
+    let datalog = {}
+    datalog['name'] = '{{ pod_name }}'
+    datalog['namespace'] = '{{ namespace }}'
+layui.use( 'form', function(){
+  var form = layui.form;
+  var $ = layui.jquery
+
+    form.on('select(ns)', function (data) {
+        datalog['container'] = data.value
+        ajxax(datalog)
+    })
+    datalog['container'] = document.getElementById('ns').value
+    ajxax(datalog)
+    function ajxax(data) {
+        $.ajax({
+              url: '{% url 'pods_log' %}'
+              ,type: 'POST'
+              ,headers:{'X-CSRFToken': "{{ csrf_token }}"}
+              ,async: false
+              ,data: data
+              ,success: function (result) {
+                  if(result.code === 0){
+                    $('#log-text').html("<pre>" + result.data + "</pre>");
+                   } else {
+                       $('#log-text').html("<pre>" + result.msg + "</pre>");
+                   }
+                  }
+              ,error: function (){
+                  layer.msg('服务器接口异常', {icon: 5})
+              }
+
+          })
+    }
 
 
+})
 </script>
 </body>
 </html>

@@ -4,6 +4,7 @@ from django.views.generic import View
 from django.http import JsonResponse, QueryDict
 from django.utils.decorators import method_decorator
 from django.shortcuts import render, redirect
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 
 from kubernetes import client
@@ -456,8 +457,9 @@ class DaemonSetsApiView(View):
 
 
 class PodsLogView(View):
+    decorators = [k8s.self_login_request, xframe_options_sameorigin]
 
-    @method_decorator(k8s.self_login_request)
+    @method_decorator(decorators)
     def get(self, request):
         namespace = request.GET.get("namespace")
         pod_name = request.GET.get("pod_name")
@@ -471,8 +473,9 @@ class PodsLogView(View):
         core_api = client.CoreV1Api()
         name = request.POST.get("name", None)
         namespace = request.POST.get("namespace", None)
+        container = request.POST.get('container')
         try:
-            log_text = core_api.read_namespaced_pod_log(name=name, namespace=namespace, container=None, tail_lines=500)
+            log_text = core_api.read_namespaced_pod_log(name=name, namespace=namespace, container=container, tail_lines=500)
         except client.exceptions.ApiException as e:
             code = e.status
             if e.status == 403:

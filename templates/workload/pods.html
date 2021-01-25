@@ -134,33 +134,22 @@ layui.use(['table', 'form'], function(){
             })
       } else if (obj.event === 'log') {
           let datalog = {}
-          datalog['name'] = data['name']
-          datalog['namespace'] = data['namespace']
-          $.ajax({
-              url: '{% url 'pods_log' %}'
-              ,type: 'POST'
-              ,headers:{'X-CSRFToken': "{{ csrf_token }}"}
-              ,async: false
-              ,data: datalog
-              ,success: function (result) {
-                  if(result.code === 0){
-                    $('#log-text').html("<pre>" + result.data + "</pre>");
-                   } else {
-                       $('#log-text').html("<pre>" + result.msg + "</pre>");
-                   }
-                  }
-              ,error: function (){
-                  layer.msg('服务器接口异常', {icon: 5})
-              }
-
-          })
+          cs = data['containers'];
+          containers = "";
+          for(let c in cs) {
+            if (c < cs.length-1) {
+                containers += cs[c]['c_name'] + ","
+            } else {
+                containers += cs[c]['c_name']
+            }
+          }
           layer.open({
-              title: "容器日志 "+ data["name"],
-              type:1,
-              area : [ '60%', '70%' ],
-              closeBtn: 1, // 关闭按钮
-              content: $("#modal").html()   // form div
-          })
+            title: "容器日志 "+ data["name"],
+            type: 2,  // 加载层，从另一个网址引用
+            area : [ '60%', '70%' ],
+            content: '{% url "pods_log" %}?namespace=' + data["namespace"] + "&pod_name=" + data["name"] + "&containers=" + containers,
+        });
+
       }
   })
     // 监听搜索ID事件
