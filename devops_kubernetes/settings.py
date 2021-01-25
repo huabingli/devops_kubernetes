@@ -99,10 +99,21 @@ CHANNEL_LAYERS = {
     },
 }
 
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+#         'LOCATION': 'my_cache_table',
+#     }
+# }
+
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'my_cache_table',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://192.168.35.62:31579/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+            # "PASSWORD": "mysecret"
+        }
     }
 }
 

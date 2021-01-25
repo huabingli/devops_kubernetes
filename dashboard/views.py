@@ -25,7 +25,7 @@ class LogIn(View):
         import hashlib
         token = self.request.POST.get('token', None)
         random_str = hashlib.md5(str(random.random()).encode()).hexdigest()
-        random_str = f'k8s_token{random_str}'
+        random_str = f'k8s_token:{random_str}'
 
         if token:
             timeout = request.session.get_expiry_age()
@@ -73,6 +73,10 @@ class LogIn(View):
 
 
 def logout(request):
+    random_str_token = request.session.get('token', 'None')
+    token = True if cache.get(random_str_token, False) else False
+    if token:
+        cache.delete(random_str_token)
     request.session.clear()
     return redirect('login')
 
